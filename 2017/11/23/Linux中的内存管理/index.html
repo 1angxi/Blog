@@ -1,0 +1,476 @@
+
+ <!DOCTYPE HTML>
+<html lang="Java Python">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>Linux中的内存管理 | 路在脚下</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="乾坤">
+    
+
+    
+    <meta name="description" content="Linux的内存管理方式经常会在面试时作为操作系统基础被问道。搞清楚这个问题的好处很多，近的话可以应付面试，远的可以提高对于操作系统底层的认识，为程序的性能优化打下基础。 我们对于计算机内存，最直观和简陋的概念就是机器的物理内存，程序都被放在物理内存上执行。物理内存一般都有限制，比如说4G或者8G。 但是如果真的这样直">
+<meta name="keywords" content="内存管理,Linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux中的内存管理">
+<meta property="og:url" content="http://roaduderfoot.com/2017/11/23/Linux中的内存管理/index.html">
+<meta property="og:site_name" content="路在脚下">
+<meta property="og:description" content="Linux的内存管理方式经常会在面试时作为操作系统基础被问道。搞清楚这个问题的好处很多，近的话可以应付面试，远的可以提高对于操作系统底层的认识，为程序的性能优化打下基础。 我们对于计算机内存，最直观和简陋的概念就是机器的物理内存，程序都被放在物理内存上执行。物理内存一般都有限制，比如说4G或者8G。 但是如果真的这样直接的使用物理内存会发生什么状况？ 1、进程地址空间不能隔离由于程序直接访问的是物">
+<meta property="og:locale" content="Java Python">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-68047d4ea890298b.jpg">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-fc482b0ab34562fc.jpg">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-f9497bf469968de5.jpg">
+<meta property="og:updated_time" content="2017-11-23T04:19:11.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux中的内存管理">
+<meta name="twitter:description" content="Linux的内存管理方式经常会在面试时作为操作系统基础被问道。搞清楚这个问题的好处很多，近的话可以应付面试，远的可以提高对于操作系统底层的认识，为程序的性能优化打下基础。 我们对于计算机内存，最直观和简陋的概念就是机器的物理内存，程序都被放在物理内存上执行。物理内存一般都有限制，比如说4G或者8G。 但是如果真的这样直接的使用物理内存会发生什么状况？ 1、进程地址空间不能隔离由于程序直接访问的是物">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/648342-68047d4ea890298b.jpg">
+
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="路在脚下" title="路在脚下"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
+				<h2 class="blog-motto">记录在人世的行走</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜單">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:roaduderfoot.com">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/11/23/Linux中的内存管理/" title="Linux中的内存管理" itemprop="url">Linux中的内存管理</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-11-23T04:17:59.000Z" itemprop="datePublished"> 發表於 2017-11-23</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">文章目錄</strong>
+		
+			<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1、进程地址空间不能隔离"><span class="toc-number">1.</span> <span class="toc-text">1、进程地址空间不能隔离</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2、内存使用的效率低"><span class="toc-number">2.</span> <span class="toc-text">2、内存使用的效率低</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3、程序运行的地址不能确定"><span class="toc-number">3.</span> <span class="toc-text">3、程序运行的地址不能确定</span></a></li></ol>
+		
+		</div>
+		
+		<p>Linux的内存管理方式经常会在面试时作为操作系统基础被问道。搞清楚这个问题的好处很多，近的话可以应付面试，远的可以提高对于操作系统底层的认识，为程序的性能优化打下基础。</p>
+<p>我们对于计算机内存，最直观和简陋的概念就是机器的物理内存，程序都被放在物理内存上执行。物理内存一般都有限制，比如说4G或者8G。</p>
+<p>但是如果真的这样直接的使用物理内存会发生什么状况？</p>
+<h1 id="1、进程地址空间不能隔离"><a href="#1、进程地址空间不能隔离" class="headerlink" title="1、进程地址空间不能隔离"></a>1、进程地址空间不能隔离</h1><p>由于程序直接访问的是物理内存，这个时候程序所使用的内存空间不是隔离的。恶意程序或者是木马程序可以轻而易举的破快其他的程序，系统的安全性也就得不到保障了，这对用户来说也是不能容忍的。</p>
+<h1 id="2、内存使用的效率低"><a href="#2、内存使用的效率低" class="headerlink" title="2、内存使用的效率低"></a>2、内存使用的效率低</h1><p>由于物理内存一般都有限制，当物理内存不够用时，需要把暂时不需要运行的程序放到磁盘上，试想将整个程序放入磁盘，我们知道IO操作比较耗时，所以这个过程效率将会十分低下。</p>
+<h1 id="3、程序运行的地址不能确定"><a href="#3、程序运行的地址不能确定" class="headerlink" title="3、程序运行的地址不能确定"></a>3、程序运行的地址不能确定</h1><p>程序每次需要运行时，都需要在内存中非配一块足够大的空闲区域，而问题是这个空闲的位置是不能确定的，这会带来一些重定位的问题，重定位的问题确定就是程序中引用的变量和函数的地址。</p>
+<p>可以通过引入一个中间层来解决上面的问题。</p>
+<p>现在的内存管理方法就是在程序和物理内存之间引入了虚拟内存这个概念。虚拟内存位于程序和物理内存之间，程序只能看见虚拟内存，再也不能直接访问物理内存。每个程序都有自己独立的进程地址空间，这样就做到了进程隔离。这里的进程地址空间是指虚拟地址。顾名思义既然是虚拟地址，也就是虚的，不是现实存在的地址空间。</p>
+<p>既然我们在程序和物理地址空间之间增加了虚拟地址，那么就要解决怎么从虚拟地址映射到物理地址，因为程序最终肯定是运行在物理内存中的，主要有分段和分页两种技术。</p>
+<p>分段(Segmentation)：这种方法是人们最开始使用的一种方法，基本思路是将程序所需要的内存地址空间大小的虚拟空间映射到某个物理地址空间。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-68047d4ea890298b.jpg" alt="段映射机制"></p>
+<p>每个程序都有自己的独立虚拟的进程地址空间。进程的只能看到自己的虚拟地址空间，这就使得进程和实际的物理地址解除耦合。两块大小相同的虚拟地址空间和实际物理地址空间一一映射，即虚拟地址空间中的每个字节对应于实际地址空间中的每个字节，这个映射过程由软件来设置映射的机制，实际的转换由硬件来完成。</p>
+<p>这种分段的机制解决了文章一开始提到的3个问题中的进程地址空间隔离（1）和程序地址重定位（3）的问题。（PS：既然隔离了，那么缓冲区溢出为啥还能那么牛掰？答案最后讲。）</p>
+<p>程序A和程序B有自己独立的虚拟地址空间，而且该虚拟地址空间被映射到了互相不重叠的物理地址空间，如果程序A访问虚拟地址空间的地址不在0x00000000-0x00A00000这个范围内，那么内核就会拒绝这个请求，所以它解决了隔离地址空间的问题。我们应用程序A只需要关心其虚拟地址空间0x00000000-0x00A00000，而其被映射到哪个物理地址我们无需关心，所以程序永远按照这个虚拟地址空间来放置变量、代码，不需要重新定位。</p>
+<p>分段机制解决了上面两个问题，是一个很大的进步，但是对于内存效率问题仍然无能为力。因为这种内存映射机制仍然是以程序为单位，当内存不足时仍然需要将整个程序交换到磁盘，这样内存使用的效率仍然很低。事实上，根据程序的局部性运行原理，一个程序在运行的过程当中，在某个时间段内，只有一小部分数据会被经常用到。所以我们需要更加小粒度的内存分割和映射方法，此时是否会想到Linux中的Buddy算法和slab内存分配机制呢，哈哈。另一种将虚拟地址转换为物理地址的方法分页机制应运而生了。</p>
+<p>分页机制就是把内存地址空间分为若干个很小的固定大小的页，每一页的大小由内存决定，就像Linux中ext文件系统将磁盘分成若干个Block一样，这样做是分别是为了提高内存和磁盘的利用率。</p>
+<p>Linux中一般页的大小是4KB，我们把进程的地址空间按页分割，把常用的数据和代码页装载到内存中，不常用的代码和数据保存在磁盘中，我们还是以一个例子来说明,如下图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-fc482b0ab34562fc.jpg" alt="分页机制"></p>
+<p>我们可以看到进程1和进程2的虚拟地址空间都被映射到了不连续的物理地址空间内。</p>
+<p>有一天我们的连续物理地址空间不够，但是不连续的地址空间很多，如果没有这种技术，我们的程序就没有办法运行,甚至他们共用了一部分物理地址空间，这就是共享内存。</p>
+<p>进程1的虚拟页VP2和VP3被交换到了磁盘中，在程序需要这两页的时候，Linux内核会产生一个缺页异常，然后异常管理程序会将其读到内存中。</p>
+<p>分页机制的实现需要硬件的实现，这个硬件名字叫做MMU(Memory Management Unit)，他就是专门负责从虚拟地址到物理地址转换的，也就是从虚拟页找到物理页。</p>
+<p>有的时候，单个页表无法表示所有内存页信息，我们还需要多级页表的帮助才行。（后面再讲。）</p>
+<p>下面继续聊聊进程地址的概念，当然都是基于Linux操作系统。</p>
+<p>进程内部通过分段的方式划分了：数据段、代码段。数据段又可以分为：静态数据段、栈、堆。</p>
+<p>由此有几个地址需要讲一下：</p>
+<ul>
+<li><p>逻辑地址：段基值确定它所在的段居于整个存储空间的位置,偏移量确定它在段内的位置,这种地址表示方式称为逻辑地址。机器语言指令中出现的内存地址（&amp;操作符），都是逻辑地址。</p>
+</li>
+<li><p>线性地址：又叫虚拟地址，是一个32位无符号整数，可以用来表示高达4GB的地址，跟逻辑地址类似，它也是一个不真实的地址，如果逻辑地址是对应的硬件平台段式管理转换前地址的话，那么线性地址则对应了硬件页式内存的转换前地址。</p>
+</li>
+<li><p>物理地址：用于内存芯片级的单元寻址，与处理器和CPU连接的地址总线相对应。</p>
+</li>
+</ul>
+<p>CPU将一个虚拟内存空间中的地址转换为物理地址，需要进行两步：首先将给定一个逻辑地址，CPU要利用其段式内存管理单元，先将为个逻辑地址转换成一个线性地址，再利用其页式内存管理单元，转换为最终物理地址。</p>
+<p>逻辑地址—-<strong>段式内存管理单元</strong>—-线性地址—-<strong>页式内存管理单元</strong>—-物理地址</p>
+<p><strong>Linux中逻辑地址等于线性地址</strong>。为什么这么说呢？因为Linux所有的段（用户代码段、用户数据段、内核代码段、内核数据段）的线性地址都是从 0x00000000 开始，长度4G，这样<strong>线性地址=逻辑地址+ 0x00000000</strong>，也就是说逻辑地址等于线性地址了。</p>
+<p>Linux主要以分页的方式实现内存管理。</p>
+<p>前面说了Linux中逻辑地址等于线性地址，那么线性地址怎么对应到物理地址呢？这个大家都知道，那就是通过分页机制，具体的说，就是通过页表查找来对应物理地址。</p>
+<p>准确的说分页是CPU提供的一种机制，Linux只是根据这种机制的规则，利用它实现了内存管理。</p>
+<p>分页的基本原理是把内存划分成大小固定的若干单元，每个单元称为一页（page），每页包含4k字节的地址空间（为简化分析，我们不考虑扩展分页的情况）。这样每一页的起始地址都是4k字节对齐的。为了能转换成物理地址，我们需要给CPU提供当前任务的线性地址转物理地址的查找表，即页表(page table)。注意，<strong>为了实现每个任务的平坦的虚拟内存，每个任务都有自己的页目录表和页表</strong>。</p>
+<p>32位的线性地址被分成3个部分：最高10位 Directory 页目录表偏移量，中间10位 Table是页表偏移量，最低12位Offset是物理页内的字节偏移量。</p>
+<p>页目录表的大小为4k（刚好是一个页的大小），包含1024项，每个项4字节（32位），项目里存储的内容就是<strong>页表的物理地址</strong>。如果页目录表中的页表尚未分配，则物理地址填0。</p>
+<p>页表的大小也是4k，同样包含1024项，每个项4字节，内容为最终物理页的物理内存起始地址。</p>
+<p><strong>每个活动的任务，必须要先分配给它一个页目录表，并把页目录表的物理地址存入cr3寄存器。页表可以提前分配好，也可以在用到的时候再分配</strong>。</p>
+<p>以 mov    0x80495b0, %eax 中的地址为例分析一下线性地址转物理地址的过程。</p>
+<p>前面说到Linux中逻辑地址等于线性地址，那么我们要转换的线性地址就是0x80495b0。转换的过程是由CPU自动完成的，Linux所要做的就是准备好转换所需的页目录表和页表（假设已经准备好，给页目录表和页表分配物理内存的过程很复杂，后面再分析）。</p>
+<p>内核先将当前任务的页目录表的物理地址填入cr3寄存器。</p>
+<p>线性地址 0x80495b0 转换成二进制后是 0000 1000 0000 0100 1001 0101 1011 0000，最高10位0000 1000 00的十进制是32，CPU查看页目录表第32项，里面存放的是页表的物理地址。线性地址中间10位00 0100 1001 的十进制是73，页表的第73项存储的是最终物理页的物理起始地址。物理页基地址加上线性地址中最低12位的偏移量，CPU就找到了线性地址最终对应的物理内存单元。</p>
+<p>我们知道Linux中用户进程线性地址能寻址的范围是0 － 3G，那么是不是需要提前先把这3G虚拟内存的页表都建立好呢？一般情况下，物理内存是远远小于3G的，加上同时有很多进程都在运行，根本无法给每个进程提前建立3G的线性地址页表。Linux利用CPU的一个机制解决了这个问题。进程创建后我们可以给页目录表的表项值都填0，CPU在查找页表时，如果表项的内容为0,则会引发一个缺页异常，进程暂停执行，Linux内核这时候可以通过一系列复杂的算法给分配一个物理页，并把物理页的地址填入表项中，进程再恢复执行。当然进程在这个过程中是被蒙蔽的，它自己的感觉还是正常访问到了物理内存。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-f9497bf469968de5.jpg" alt="线性地址转物理地址"></p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/内存管理/">内存管理</a><a href="/tags/Linux/">Linux</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="http://roaduderfoot.com/2017/11/23/Linux中的内存管理/" data-title="Linux中的内存管理 | 路在脚下" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2017/11/21/Java代理模式及使用/"  title="Java代理模式及使用">
+ <strong>下一篇：</strong><br/> 
+ <span>Java代理模式及使用
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="顯示側邊欄"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目錄</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1、进程地址空间不能隔离"><span class="toc-number">1.</span> <span class="toc-text">1、进程地址空间不能隔离</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2、内存使用的效率低"><span class="toc-number">2.</span> <span class="toc-text">2、内存使用的效率低</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3、程序运行的地址不能确定"><span class="toc-number">3.</span> <span class="toc-text">3、程序运行的地址不能确定</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隱藏側邊欄"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">標簽</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Linux/" title="Linux">Linux<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">歸檔</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
+  </div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m qiankun in MOGUJIE. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/luofenx" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/1angxi" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		<a href="http://www.zhihu.com/people/1angxi" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2017 
+		
+		<a href="/about" target="_blank" title="乾坤">乾坤</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回頂部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>
