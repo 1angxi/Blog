@@ -12,7 +12,7 @@
 
     
     <meta name="description" content="一、简单代理模式简单代理模式就是为一个实现类找一个代理人类，由这个代理人持有这个实现类并对外提供服务。 假设我有一个RealSubject类，实现了Subject接口：123456public class RealSubject implements Subject&amp;#123;    @Override    ">
-<meta name="keywords" content="代理模式">
+<meta name="keywords" content="代理模式,Java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java代理模式及使用">
 <meta property="og:url" content="http://roaduderfoot.com/2017/11/21/Java代理模式及使用/index.html">
@@ -20,7 +20,7 @@
 <meta property="og:description" content="一、简单代理模式简单代理模式就是为一个实现类找一个代理人类，由这个代理人持有这个实现类并对外提供服务。 假设我有一个RealSubject类，实现了Subject接口：123456public class RealSubject implements Subject&amp;#123;    @Override    public void request() &amp;#123;        System.o">
 <meta property="og:locale" content="Java Python">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-45ef2987e16858da.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-11-21T11:14:06.000Z">
+<meta property="og:updated_time" content="2017-11-23T04:30:13.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Java代理模式及使用">
 <meta name="twitter:description" content="一、简单代理模式简单代理模式就是为一个实现类找一个代理人类，由这个代理人持有这个实现类并对外提供服务。 假设我有一个RealSubject类，实现了Subject接口：123456public class RealSubject implements Subject&amp;#123;    @Override    public void request() &amp;#123;        System.o">
@@ -50,7 +50,7 @@
 				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
 				<h2 class="blog-motto">记录在人世的行走</h2>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜單">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -60,7 +60,7 @@
  					
 					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
 						<label>Search</label>
-						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
 						<input type="hidden" name="q" value="site:roaduderfoot.com">
 					</form>
 					
@@ -83,14 +83,14 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-11-21T11:10:56.000Z" itemprop="datePublished"> 發表於 2017-11-21</time>
+    <time datetime="2017-11-21T11:10:56.000Z" itemprop="datePublished"> Published 2017-11-21</time>
     
   </p>
 </header>
 	<div class="article-content">
 		
 		<div id="toc" class="toc-article">
-			<strong class="toc-title">文章目錄</strong>
+			<strong class="toc-title">Contents</strong>
 		
 			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、简单代理模式"><span class="toc-number">1.</span> <span class="toc-text">一、简单代理模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、动态代理模式"><span class="toc-number">2.</span> <span class="toc-text">二、动态代理模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、动态代理的原理"><span class="toc-number">3.</span> <span class="toc-text">三、动态代理的原理</span></a></li></ol>
 		
@@ -125,7 +125,7 @@
 
   <div class="article-tags">
   
-  <span></span> <a href="/tags/代理模式/">代理模式</a>
+  <span></span> <a href="/tags/代理模式/">代理模式</a><a href="/tags/Java/">Java</a>
   </div>
 
 </div>
@@ -171,25 +171,33 @@
 
 
 </div>  
-      <div class="openaside"><a class="navbutton" href="#" title="顯示側邊欄"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
 
   <div id="toc" class="toc-aside">
-  <strong class="toc-title">文章目錄</strong>
+  <strong class="toc-title">Contents</strong>
  
  <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、简单代理模式"><span class="toc-number">1.</span> <span class="toc-text">一、简单代理模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、动态代理模式"><span class="toc-number">2.</span> <span class="toc-text">二、动态代理模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、动态代理的原理"><span class="toc-number">3.</span> <span class="toc-text">三、动态代理的原理</span></a></li></ol>
  
   </div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="隱藏側邊欄"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
 <aside class="clearfix">
 
   
 
   
 <div class="tagslist">
-	<p class="asidetitle">標簽</p>
+	<p class="asidetitle">Tags</p>
 		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Java/" title="Java">Java<sup>1</sup></a></li>
+			
 		
 			
 				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
@@ -199,17 +207,13 @@
 				<li><a href="/tags/Linux/" title="Linux">Linux<sup>1</sup></a></li>
 			
 		
-			
-				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
-			
-		
 		</ul>
 </div>
 
 
   
   <div class="archiveslist">
-    <p class="asidetitle"><a href="/archives">歸檔</a></p>
+    <p class="asidetitle"><a href="/archives">Archives</a></p>
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
   </div>
 
@@ -432,7 +436,7 @@ $(document).ready(function(){
 <!-- Totop Begin -->
 
 	<div id="totop">
-	<a title="返回頂部"><img src="/img/scrollup.png"/></a>
+	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
 	</div>
 	<script src="/js/totop.js"></script>
 
