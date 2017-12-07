@@ -1,0 +1,467 @@
+
+ <!DOCTYPE HTML>
+<html lang="Java Python">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>Spring中使用Quartz来做单机任务调度 | 路在脚下</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="乾坤">
+    
+
+    
+    <meta name="description" content="背景开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。 但是，分布式任务调度中间件往往是基于一个zookeepe">
+<meta name="keywords" content="Spring,Quartz,任务调度">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring中使用Quartz来做单机任务调度">
+<meta property="og:url" content="http://roaduderfoot.com/2017/12/08/Spring中使用Quartz来做单机任务调度/index.html">
+<meta property="og:site_name" content="路在脚下">
+<meta property="og:description" content="背景开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。 但是，分布式任务调度中间件往往是基于一个zookeeper集群来做任务调度的。如果zookeeper集群出了问题，任务调度就挂街了。">
+<meta property="og:locale" content="Java Python">
+<meta property="og:updated_time" content="2017-12-07T16:42:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring中使用Quartz来做单机任务调度">
+<meta name="twitter:description" content="背景开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。 但是，分布式任务调度中间件往往是基于一个zookeeper集群来做任务调度的。如果zookeeper集群出了问题，任务调度就挂街了。">
+
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="路在脚下" title="路在脚下"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
+				<h2 class="blog-motto">记录在人世的行走</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
+						<input type="hidden" name="q" value="site:roaduderfoot.com">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/12/08/Spring中使用Quartz来做单机任务调度/" title="Spring中使用Quartz来做单机任务调度" itemprop="url">Spring中使用Quartz来做单机任务调度</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-07T16:41:38.000Z" itemprop="datePublished"> Published 2017-12-08</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">Contents</strong>
+		
+			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#QuartzTask"><span class="toc-number">2.</span> <span class="toc-text">QuartzTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EmptyTask"><span class="toc-number">3.</span> <span class="toc-text">EmptyTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanPostProcessor"><span class="toc-number">4.</span> <span class="toc-text">BeanPostProcessor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SchedulerManager"><span class="toc-number">5.</span> <span class="toc-text">SchedulerManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ScheduleTaskExecutor"><span class="toc-number">6.</span> <span class="toc-text">ScheduleTaskExecutor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#存在的问题"><span class="toc-number">7.</span> <span class="toc-text">存在的问题</span></a></li></ol>
+		
+		</div>
+		
+		<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。</p>
+<p>但是，分布式任务调度中间件往往是基于一个zookeeper集群来做任务调度的。如果zookeeper集群出了问题，任务调度就挂街了。</p>
+<p>这个时候其实可以直接基于quartz来做调度，这也是本文要说的事情。</p>
+<h3 id="QuartzTask"><a href="#QuartzTask" class="headerlink" title="QuartzTask"></a>QuartzTask</h3><p>首先定义一个任务接口，我们希望一个任务实现下面这些方法:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">QuartzTask</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 任务执行的代码</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">executeTask</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 指定执行任务的机器ip</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> String</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">String <span class="title">getTargetIP</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * crond表达式</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> String</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">String <span class="title">getCrond</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 任务唯一名称</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> String</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">String <span class="title">getJobName</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="EmptyTask"><a href="#EmptyTask" class="headerlink" title="EmptyTask"></a>EmptyTask</h3><p>为了解释清楚如何使用quartz来做单机任务调度，我们新建一个空白的任务EmptyTask并实现QuartzTask定义的方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span>(<span class="string">"emptyTask"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EmptyTask</span> <span class="keyword">implements</span> <span class="title">QuartzTask</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger logger = LoggerFactory.getLogger(EmptyTask.class);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">executeTask</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        logger.warn(<span class="string">"emptyTask running"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getTargetIP</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"127.0.0.1"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getCrond</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"0 0/1 * * * ?"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getJobName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"emptyTask"</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>targetIP即可以写死成一个字符串，也可以从配置服务、第三方接口，数据库等数据源动态的获取。</p>
+<p>crond表达式可以在 <a href="http://cron.qqe2.com/" target="_blank" rel="noopener">http://cron.qqe2.com/</a> 动态生成。</p>
+<h3 id="BeanPostProcessor"><a href="#BeanPostProcessor" class="headerlink" title="BeanPostProcessor"></a>BeanPostProcessor</h3><p>BeanPostProcessor是Spring中一个很实用的接口。BeanPostProcessor提供了两个方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanPostProcessor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function">Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">	<span class="function">Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>postProcessBeforeInitialization:Bean 实例化之前进行的处理<br>postProcessAfterInitialization: Bean 实例化之后进行的处理</p>
+<p>使用BeanPostProcessor也很简单，只要实现这个接口，并重载这两个方法就可以了。</p>
+<h3 id="SchedulerManager"><a href="#SchedulerManager" class="headerlink" title="SchedulerManager"></a>SchedulerManager</h3><p>利用BeanPostProcessor提供的特性，我们可以在所有bean初始化完成之后做一些事情。于是就有了SchedulerManager类:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SchedulerManager</span> <span class="keyword">extends</span> <span class="title">SchedulerFactoryBean</span> <span class="keyword">implements</span> <span class="title">BeanPostProcessor</span>, <span class="title">InitializingBean</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Scheduler scheduler;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">afterPropertiesSet</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.afterPropertiesSet();</span><br><span class="line">        <span class="keyword">this</span>.scheduler = <span class="keyword">this</span>.getScheduler();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> bean;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (QuartzTask.class.isInstance(bean)) &#123;</span><br><span class="line">                QuartzTask quartzTask = QuartzTask.class.cast(bean);</span><br><span class="line"></span><br><span class="line">                CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(quartzTask.getCrond());</span><br><span class="line">                Trigger newTrigger = TriggerBuilder.newTrigger()</span><br><span class="line">                        .withIdentity(quartzTask.getJobName(), <span class="string">"DEFAULT"</span>).withSchedule(scheduleBuilder).build();</span><br><span class="line"></span><br><span class="line">                <span class="comment">//需要一个中间job类来处理，中间类会去实际执行任务</span></span><br><span class="line">                JobDetail jobDetail = JobBuilder.newJob(ScheduleTaskExecutor.class)</span><br><span class="line">                        .withIdentity(quartzTask.getJobName(), <span class="string">"DEFAULT"</span>).build();</span><br><span class="line">                jobDetail.getJobDataMap().put(<span class="string">"taskContext"</span>, quartzTask);</span><br><span class="line"></span><br><span class="line">                scheduler.scheduleJob(jobDetail, newTrigger);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            logger.error(<span class="string">"scheduleManager init error."</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> bean;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="ScheduleTaskExecutor"><a href="#ScheduleTaskExecutor" class="headerlink" title="ScheduleTaskExecutor"></a>ScheduleTaskExecutor</h3><p>由于JobDetail自己管理了任务执行类的生命周期，所以只能使用一个中间任务类ScheduleTaskExecutor，中转到要实际执行的任务。</p>
+<p><code>DisallowConcurrentExecution</code>注解能使得ScheduleTaskExecutor的同一个实例，不会并发执行execute方法。也就是说同一个JobDetail不会并发执行。但是如果是不同的JobDetail，是可以并发执行的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@DisallowConcurrentExecution</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ScheduleTaskExecutor</span> <span class="keyword">implements</span> <span class="title">Job</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(JobExecutionContext context)</span> <span class="keyword">throws</span> JobExecutionException </span>&#123;</span><br><span class="line">        QuartzTask quartzTask = (QuartzTask)context.getMergedJobDataMap().get(<span class="string">"taskContext"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!HttpUtil.getServerIp().equals(quartzTask.getTargetIP())) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        quartzTask.executeTask();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="存在的问题"><a href="#存在的问题" class="headerlink" title="存在的问题"></a>存在的问题</h3><p>上面的实现方式存在一个待优化的问题：线上应用往往是多机器分布式的，虽然指定了某个IP执行任务，但是其实每台机器都开启了一个定时任务去执行中间任务类的的方法，只不过在IP判断的时候提前结束了任务。</p>
+<p>更好的实现方式，是监控targetIP的变化，然后暂停or开启任务。</p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Spring/">Spring</a><a href="/tags/Quartz/">Quartz</a><a href="/tags/任务调度/">任务调度</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="http://roaduderfoot.com/2017/12/08/Spring中使用Quartz来做单机任务调度/" data-title="Spring中使用Quartz来做单机任务调度 | 路在脚下" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2017/12/04/负载测试学习笔记/"  title="负载测试学习笔记">
+ <strong>下一篇：</strong><br/> 
+ <span>负载测试学习笔记
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">Contents</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#QuartzTask"><span class="toc-number">2.</span> <span class="toc-text">QuartzTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EmptyTask"><span class="toc-number">3.</span> <span class="toc-text">EmptyTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanPostProcessor"><span class="toc-number">4.</span> <span class="toc-text">BeanPostProcessor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SchedulerManager"><span class="toc-number">5.</span> <span class="toc-text">SchedulerManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ScheduleTaskExecutor"><span class="toc-number">6.</span> <span class="toc-text">ScheduleTaskExecutor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#存在的问题"><span class="toc-number">7.</span> <span class="toc-text">存在的问题</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">Tags</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java/" title="Java">Java<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Linux/" title="Linux">Linux<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Spring/" title="Spring">Spring<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/任务调度/" title="任务调度">任务调度<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/负载测试/" title="负载测试">负载测试<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">Archives</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
+  </div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m qiankun in MOGUJIE. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/luofenx" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/1angxi" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		<a href="http://www.zhihu.com/people/1angxi" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2017 
+		
+		<a href="/about" target="_blank" title="乾坤">乾坤</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>
