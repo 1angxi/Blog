@@ -1,0 +1,477 @@
+
+ <!DOCTYPE HTML>
+<html lang="Java Python">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>MySQL为例如何实现数据迁移 | 路在脚下</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="乾坤">
+    
+
+    
+    <meta name="description" content="为什么要做数据迁移？很多场景会导致我们需要修改表结构，当alter不支持修改或者说alter导致的锁表代价太大的时候，我们就需要做数据迁移来解决。 典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到新的库和表当中。 其次就是经过了一段时间">
+<meta name="keywords" content="MySQL,数据迁移,数据库中间件">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL为例如何实现数据迁移">
+<meta property="og:url" content="http://roaduderfoot.com/2017/12/23/MySQL为例如何实现数据迁移/index.html">
+<meta property="og:site_name" content="路在脚下">
+<meta property="og:description" content="为什么要做数据迁移？很多场景会导致我们需要修改表结构，当alter不支持修改或者说alter导致的锁表代价太大的时候，我们就需要做数据迁移来解决。 典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到新的库和表当中。 其次就是经过了一段时间之后，需求有很大变化的时候，需要扩充单表字段。单纯的alter对于有很多数据的单">
+<meta property="og:locale" content="Java Python">
+<meta property="og:updated_time" content="2017-12-23T13:36:25.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL为例如何实现数据迁移">
+<meta name="twitter:description" content="为什么要做数据迁移？很多场景会导致我们需要修改表结构，当alter不支持修改或者说alter导致的锁表代价太大的时候，我们就需要做数据迁移来解决。 典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到新的库和表当中。 其次就是经过了一段时间之后，需求有很大变化的时候，需要扩充单表字段。单纯的alter对于有很多数据的单">
+
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="路在脚下" title="路在脚下"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
+				<h2 class="blog-motto">记录在人世的行走</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
+						<input type="hidden" name="q" value="site:roaduderfoot.com">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/12/23/MySQL为例如何实现数据迁移/" title="MySQL为例如何实现数据迁移" itemprop="url">MySQL为例如何实现数据迁移</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-23T13:35:40.000Z" itemprop="datePublished"> Published 2017-12-23</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">Contents</strong>
+		
+			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#为什么要做数据迁移？"><span class="toc-number">1.</span> <span class="toc-text">为什么要做数据迁移？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#怎么做数据迁移？"><span class="toc-number">2.</span> <span class="toc-text">怎么做数据迁移？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何实现无缝迁移？"><span class="toc-number">3.</span> <span class="toc-text">如何实现无缝迁移？</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#方案一-定点停机迁移"><span class="toc-number">3.0.1.</span> <span class="toc-text">方案一 定点停机迁移</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方案二-MySQL-Binlog方案"><span class="toc-number">3.1.</span> <span class="toc-text">方案二 MySQL Binlog方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方案四-触发器方案"><span class="toc-number">3.2.</span> <span class="toc-text">方案四 触发器方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方案四-中间件方案"><span class="toc-number">3.3.</span> <span class="toc-text">方案四 中间件方案</span></a></li></ol></li></ol>
+		
+		</div>
+		
+		<h3 id="为什么要做数据迁移？"><a href="#为什么要做数据迁移？" class="headerlink" title="为什么要做数据迁移？"></a>为什么要做数据迁移？</h3><p>很多场景会导致我们需要修改表结构，当alter不支持修改或者说alter导致的锁表代价太大的时候，我们就需要做数据迁移来解决。</p>
+<p>典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到新的库和表当中。</p>
+<p>其次就是经过了一段时间之后，需求有很大变化的时候，需要扩充单表字段。单纯的alter对于有很多数据的单表并不友好，会导致单表被锁，线上写请求超时，这有时是不可容忍的。</p>
+<p>所以我们需要有数据迁移，数据迁移往往对应的是需求的变化、业务的增长。</p>
+<h3 id="怎么做数据迁移？"><a href="#怎么做数据迁移？" class="headerlink" title="怎么做数据迁移？"></a>怎么做数据迁移？</h3><p>想象一下我们如果要做数据迁移会有哪些步骤。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.逐行读取线上表的数据</span><br><span class="line">2.根据业务需要，对每行数据做特殊处理</span><br><span class="line">3.数据逐行写入到新的表中</span><br><span class="line">4.线上切换到新的数据表</span><br></pre></td></tr></table></figure></p>
+<p>看起来很简单，但是这里有一个问题需要解决。</p>
+<h3 id="如何实现无缝迁移？"><a href="#如何实现无缝迁移？" class="headerlink" title="如何实现无缝迁移？"></a>如何实现无缝迁移？</h3><p>在读取线上表的过程中，有可能出现线上表数据被update的情况。此外，读取完成线上表之后，有可能出现线上insert数据的情况。最后结果就是同步数据过程中就会马上出现新表和旧表数据不一致的地方。这个时候就需要应用停机来保证新表和旧表数据一致。但是如果不能接受长时间的停机，那该怎么办呢？</p>
+<p>可以考虑的方案是，在开始进行数据迁移时，记录增量日志，在迁移完成后，再对增量日志做处理。在最后，可以把要被迁移的数据的写暂停(应用停机)，保证增量数据都处理完成后，再切换数据源，放开所有的写，完成迁移工作。</p>
+<p>下面是一些实现数据迁移的具体方案：</p>
+<h5 id="方案一-定点停机迁移"><a href="#方案一-定点停机迁移" class="headerlink" title="方案一 定点停机迁移"></a>方案一 定点停机迁移</h5><p>在一个月黑风高的夜晚，停掉应用，用事先写好的迁移程序，把mysql 数据库数据迁移到新结构的mysql数据库中。完成后，切换应用。最大的缺点就是随着数据量的增加停机时间会变得非常长。</p>
+<p>停机到底会有多长? 千万级的数据，也许一个晚上就能搞定(大部分游戏的停机维护时间)。上亿的数据，也许就需要几天了，拥有这么大数据量的业务，一般是无法忍受这种量级的停机维护的。</p>
+<h4 id="方案二-MySQL-Binlog方案"><a href="#方案二-MySQL-Binlog方案" class="headerlink" title="方案二 MySQL Binlog方案"></a>方案二 MySQL Binlog方案</h4><p>mysql的迁移可以考虑mysql的主从复制replication的特性，解析binlog日志，根据业务需要，对每行数据做特殊处理，把数据写入到新的数据库，运行迁移过程不需要停机。在数据迁移基本上完成的时候，停掉应用，等待迁移全部完成，切换应用到新库。停机时间非常短，只需要几乎1-2分钟或者更少。</p>
+<h4 id="方案四-触发器方案"><a href="#方案四-触发器方案" class="headerlink" title="方案四 触发器方案"></a>方案四 触发器方案</h4><p>备份老的MySQL数据表结构到新的MySQL数据库，在新库创建新的表结构，更改老的数据库表，创建触发器，让数据写入的时候同时写入到的新的MySQL表。dump老的MySQL的数据，导入到新的MySQL，这是新的MySQL表结构的表应该已经有相应的数据了。然后开启主从复制，让其达到跟主库数据一致。切换应用，迁移到的方案。停机时间非常短，只需要几乎1-2分钟或者更少。</p>
+<p>这种方案一般适用于小型公司，不太适用于大公司。因为在大一点的公司，数据库管理由专门的DBA负责，业务开发人员不会有权限去MySQL服务器上去写触发器。即使可以提交工单，让DBA来全权操作，但是明明可以业务自己处理的东西，干啥每次都要劳烦DBA呢是吧:)，人力成本也是成本。</p>
+<h4 id="方案四-中间件方案"><a href="#方案四-中间件方案" class="headerlink" title="方案四 中间件方案"></a>方案四 中间件方案</h4><p>这种方案必须要你的应用连接数据使用了类似中间层的方案，你只需要在中间层增加同时往新库写数据的代码就好了。</p>
+<p>参考文献:<br><a href="http://database.51cto.com/art/201105/261037.htm" target="_blank" rel="noopener">MySQL数据库的无缝迁移</a></p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/MySQL/">MySQL</a><a href="/tags/数据迁移/">数据迁移</a><a href="/tags/数据库中间件/">数据库中间件</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="http://roaduderfoot.com/2017/12/23/MySQL为例如何实现数据迁移/" data-title="MySQL为例如何实现数据迁移 | 路在脚下" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2017/12/08/Spring中使用Quartz来做单机任务调度/"  title="Spring中使用Quartz来做单机任务调度">
+ <strong>下一篇：</strong><br/> 
+ <span>Spring中使用Quartz来做单机任务调度
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">Contents</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#为什么要做数据迁移？"><span class="toc-number">1.</span> <span class="toc-text">为什么要做数据迁移？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#怎么做数据迁移？"><span class="toc-number">2.</span> <span class="toc-text">怎么做数据迁移？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#如何实现无缝迁移？"><span class="toc-number">3.</span> <span class="toc-text">如何实现无缝迁移？</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#方案一-定点停机迁移"><span class="toc-number">3.0.1.</span> <span class="toc-text">方案一 定点停机迁移</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方案二-MySQL-Binlog方案"><span class="toc-number">3.1.</span> <span class="toc-text">方案二 MySQL Binlog方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方案四-触发器方案"><span class="toc-number">3.2.</span> <span class="toc-text">方案四 触发器方案</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#方案四-中间件方案"><span class="toc-number">3.3.</span> <span class="toc-text">方案四 中间件方案</span></a></li></ol></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">Tags</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java/" title="Java">Java<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Linux/" title="Linux">Linux<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Spring/" title="Spring">Spring<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/任务调度/" title="任务调度">任务调度<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/负载测试/" title="负载测试">负载测试<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">Archives</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
+  </div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m qiankun in MOGUJIE. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/luofenx" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/1angxi" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		<a href="http://www.zhihu.com/people/1angxi" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2017 
+		
+		<a href="/about" target="_blank" title="乾坤">乾坤</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>
