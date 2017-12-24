@@ -1,0 +1,502 @@
+
+ <!DOCTYPE HTML>
+<html lang="Java Python">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>分布式事务 | 路在脚下</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="乾坤">
+    
+
+    
+    <meta name="description" content="分布式事务是什么？分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。 来看一个分布式事务的规范-XA，XA定义的三个组件：  应用程序(AP)，它定义了事务的边界，并且定义了构">
+<meta name="keywords" content="Java,分布式事务">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式事务">
+<meta property="og:url" content="http://roaduderfoot.com/2017/12/24/分布式事务/index.html">
+<meta property="og:site_name" content="路在脚下">
+<meta property="og:description" content="分布式事务是什么？分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。 来看一个分布式事务的规范-XA，XA定义的三个组件：  应用程序(AP)，它定义了事务的边界，并且定义了构成该事务的应用程序的特定操作。 资源管理器(RM)，可以理解为一个DBMS系统，">
+<meta property="og:locale" content="Java Python">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-97cdf72d735ea81a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-beea02a94d7be619.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-a4d7ff8012b38dd4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-e903078e7a9fbef9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-8c5a97747d8f6cc9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-12-24T08:47:07.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分布式事务">
+<meta name="twitter:description" content="分布式事务是什么？分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。 来看一个分布式事务的规范-XA，XA定义的三个组件：  应用程序(AP)，它定义了事务的边界，并且定义了构成该事务的应用程序的特定操作。 资源管理器(RM)，可以理解为一个DBMS系统，">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/648342-97cdf72d735ea81a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="路在脚下" title="路在脚下"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
+				<h2 class="blog-motto">记录在人世的行走</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
+						<input type="hidden" name="q" value="site:roaduderfoot.com">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/12/24/分布式事务/" title="分布式事务" itemprop="url">分布式事务</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-24T08:46:37.000Z" itemprop="datePublished"> Published 2017-12-24</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">Contents</strong>
+		
+			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式事务是什么？"><span class="toc-number">1.</span> <span class="toc-text">分布式事务是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#两阶段提交"><span class="toc-number">2.</span> <span class="toc-text">两阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#大型网站一致性理的基础理论-CAP-BASE"><span class="toc-number">3.</span> <span class="toc-text">大型网站一致性理的基础理论-CAP/BASE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos协议"><span class="toc-number">4.</span> <span class="toc-text">Paxos协议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">6.</span> <span class="toc-text">参考文献</span></a></li></ol>
+		
+		</div>
+		
+		<h3 id="分布式事务是什么？"><a href="#分布式事务是什么？" class="headerlink" title="分布式事务是什么？"></a>分布式事务是什么？</h3><p>分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。</p>
+<p>来看一个分布式事务的规范-XA，XA定义的三个组件：</p>
+<ul>
+<li>应用程序(AP)，它定义了事务的边界，并且定义了构成该事务的应用程序的特定操作。</li>
+<li>资源管理器(RM)，可以理解为一个DBMS系统，或者消息服务器管理系统。应用程序通过RM对资源进行控制，资源必须实现XA定义的接口。RM提供了存储共享资源的支持。</li>
+<li>事务管理器(TM)，负责协调和管理事务，提供给AP编程接口并管理资源管理器。事务管理器监控事务的进程，负责处理事务的完成和失败。</li>
+</ul>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-97cdf72d735ea81a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="AP/TM/RM之间的关系"></p>
+<p>事务管理器是额外引入的，之所以要引入事务管理器，是因为分布式系统中，两台机器理论上无法达到一致的状态，需要引入一个单点进行协调。</p>
+<h3 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h3><p>两阶段提交协议，即2PC。分布式系统中，在提交之前增加了准备的阶段，所以称为两阶段提交。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-beea02a94d7be619.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="第一阶段"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-a4d7ff8012b38dd4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="第二阶段"></p>
+<p>特别地，在准备阶段有一个资源失败，那么第二阶段处理的就是回滚所有资源。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-e903078e7a9fbef9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="出问题的第一阶段"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-8c5a97747d8f6cc9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="回滚的第二阶段"></p>
+<h3 id="大型网站一致性理的基础理论-CAP-BASE"><a href="#大型网站一致性理的基础理论-CAP-BASE" class="headerlink" title="大型网站一致性理的基础理论-CAP/BASE"></a>大型网站一致性理的基础理论-CAP/BASE</h3><p>我们来了解一下分布式系统的基础理论-CAP。</p>
+<p>CAP理论：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一致性（C）：所有的节点在同一时间读到同样的数据。当数据写入成功后，所有的节点会同事看到这个新的数据。</span><br><span class="line"></span><br><span class="line">可用性（A）：保证无论是成功还是失败，每个请求都能够收到一个反馈。这就是数据的可用性，重点是系统一定要有响应。</span><br><span class="line"></span><br><span class="line">分区容忍性（P）：即便系统中有部分问题或者消息的丢失，但是系统仍能够继续运行。</span><br></pre></td></tr></table></figure></p>
+<p>但是，分布式系统不能同时满足上面三项，一般来说，很多分布式系统在设计时的选择，是放弃一定的一致性，选择AP。</p>
+<p>再来看看BASE：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">基本可用：允许分区失败</span><br><span class="line">软状态：接受一段时间的状态不同步</span><br><span class="line">最终一致：保证最终的数据的状态是一致的</span><br></pre></td></tr></table></figure>
+<p>所以当我们选择了AP，那么对于C，采用的策略就是保证最终是一致的。</p>
+<p>强一致：所有的节点在同一时间读到同样的数据。</p>
+<p>最终一致：牺牲一部分的一致性，可以接受数据存在不一致的问题，但是通过重试或其他手段，保证数据最终会达到一致状态</p>
+<h3 id="Paxos协议"><a href="#Paxos协议" class="headerlink" title="Paxos协议"></a>Paxos协议</h3><p>Paxos协议，是一个比两阶段提交要轻量的保证一致性的协议。</p>
+<p>分布式系统中，要面临和单机处理完全不一样的问题，例如网络问题、进程or机器挂掉、进程超时等。这就会造成消息重复，一段时间内不可达等现象。Paxos协议是帮助我们解决分布式系统中一致性大问题的一个方案。</p>
+<p>使用Paxos协议有一个前提，那就是不存在拜占庭将军问题。简单来说，就是要有一个可信的通信环境，所有信息都是准确的没有被篡改。</p>
+<p>Paxos协议的决议过程比较复杂，这里不赘述，有兴趣可以自行了解。总结Paxos的核心原则就是少数服从多数。</p>
+<p>但是Paxos协议存在一个问题，如果系统中同事有人提出议案，可能会出现碰撞导致失败。然后大家都是重试，重试仍然可能导致失败。这就会导致活锁。</p>
+<p>解决的办法是在整个集群中设一个Leader，所有的议案都由他来提，这样就可以避免冲突。而引发的新问题就是如果Leader出问题了该如何处理，那就需要再选一个Leader出来。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>从工程上来说，如果能够避免分布式事务的引入，那还是避免为好；如果一定要引入分布式事务，可以考虑最终一致性的方法；从实现上来说，就是通过补偿的机制不断重试，让之前因为异常而没有进行到底的操作重试或继续进行，而不是回滚。</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p>大型网站系统与JAVA中间件实践</p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java/">Java</a><a href="/tags/分布式事务/">分布式事务</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	  <div data-url="http://roaduderfoot.com/2017/12/24/分布式事务/" data-title="分布式事务 | 路在脚下" data-tsina="" class="share clearfix">
+	  </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2017/12/23/MySQL为例如何实现数据迁移/"  title="MySQL为例如何实现数据迁移">
+ <strong>下一篇：</strong><br/> 
+ <span>MySQL为例如何实现数据迁移
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">Contents</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式事务是什么？"><span class="toc-number">1.</span> <span class="toc-text">分布式事务是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#两阶段提交"><span class="toc-number">2.</span> <span class="toc-text">两阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#大型网站一致性理的基础理论-CAP-BASE"><span class="toc-number">3.</span> <span class="toc-text">大型网站一致性理的基础理论-CAP/BASE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos协议"><span class="toc-number">4.</span> <span class="toc-text">Paxos协议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">6.</span> <span class="toc-text">参考文献</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">Tags</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java/" title="Java">Java<sup>3</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Linux/" title="Linux">Linux<sup>2</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Spring/" title="Spring">Spring<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/任务调度/" title="任务调度">任务调度<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/分布式事务/" title="分布式事务">分布式事务<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/负载测试/" title="负载测试">负载测试<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">Archives</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
+  </div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m qiankun in MOGUJIE. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/luofenx" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/1angxi" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		<a href="http://www.zhihu.com/people/1angxi" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2017 
+		
+		<a href="/about" target="_blank" title="乾坤">乾坤</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina'),
+      description = $this.attr('description');
+  var html = [
+  '<div class="hoverqrcode clearfix"></div>',
+  '<a class="overlay" id="qrcode"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="微信"></a>',
+  '<a href="http://widget.renren.com/dialog/share?resourceUrl=' + encodedUrl + '&srcUrl=' + encodedUrl + '&title=' + title +'" class="article-share-renren" target="_blank" title="人人"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="微博"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+
+  $('.hoverqrcode').hide();
+
+  var myWidth = 0;
+  function updatehoverqrcode(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+    var qrsize = myWidth > 1024 ? 200:100;
+    var options = {render: 'image', size: qrsize, fill: '#2ca6cb', text: url, radius: 0.5, quiet: 1};
+    var p = $('.article-share-qrcode').position();
+    $('.hoverqrcode').empty().css('width', qrsize).css('height', qrsize)
+                          .css('left', p.left-qrsize/2+20).css('top', p.top-qrsize-10)
+                          .qrcode(options);
+  };
+  $(window).resize(function(){
+    $('.hoverqrcode').hide();
+  });
+  $('.article-share-qrcode').click(function(){
+    updatehoverqrcode();
+    $('.hoverqrcode').toggle();
+  });
+  $('.article-share-qrcode').hover(function(){}, function(){
+      $('.hoverqrcode').hide();
+  });
+});   
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>
