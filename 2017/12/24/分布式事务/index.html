@@ -24,7 +24,7 @@
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-a4d7ff8012b38dd4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-e903078e7a9fbef9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-8c5a97747d8f6cc9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-12-24T08:47:07.000Z">
+<meta property="og:updated_time" content="2017-12-24T10:18:20.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="分布式事务">
 <meta name="twitter:description" content="分布式事务是什么？分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。 来看一个分布式事务的规范-XA，XA定义的三个组件：  应用程序(AP)，它定义了事务的边界，并且定义了构成该事务的应用程序的特定操作。 资源管理器(RM)，可以理解为一个DBMS系统，">
@@ -96,7 +96,7 @@
 		<div id="toc" class="toc-article">
 			<strong class="toc-title">Contents</strong>
 		
-			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式事务是什么？"><span class="toc-number">1.</span> <span class="toc-text">分布式事务是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#两阶段提交"><span class="toc-number">2.</span> <span class="toc-text">两阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#大型网站一致性理的基础理论-CAP-BASE"><span class="toc-number">3.</span> <span class="toc-text">大型网站一致性理的基础理论-CAP/BASE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos协议"><span class="toc-number">4.</span> <span class="toc-text">Paxos协议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">6.</span> <span class="toc-text">参考文献</span></a></li></ol>
+			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式事务是什么？"><span class="toc-number">1.</span> <span class="toc-text">分布式事务是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#两阶段提交"><span class="toc-number">2.</span> <span class="toc-text">两阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#一阶段提交"><span class="toc-number">3.</span> <span class="toc-text">一阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#大型网站一致性理的基础理论-CAP-BASE"><span class="toc-number">4.</span> <span class="toc-text">大型网站一致性理的基础理论-CAP/BASE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos协议"><span class="toc-number">5.</span> <span class="toc-text">Paxos协议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">7.</span> <span class="toc-text">参考文献</span></a></li></ol>
 		
 		</div>
 		
@@ -115,6 +115,11 @@
 <p>特别地，在准备阶段有一个资源失败，那么第二阶段处理的就是回滚所有资源。</p>
 <p><img src="http://upload-images.jianshu.io/upload_images/648342-e903078e7a9fbef9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="出问题的第一阶段"></p>
 <p><img src="http://upload-images.jianshu.io/upload_images/648342-8c5a97747d8f6cc9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="回滚的第二阶段"></p>
+<p>将提交分成两阶段进行的目的很明确，就是尽可能晚地提交事务，让事务在提交前尽可能地完成所有能完成的工作，这样，最后的提交阶段将是一个耗时极短的微小操作，这种操作在一个分布式系统中失败的概率是非常小的，也就是所谓的“网络通讯危险期”非常的短暂，这是两阶段提交确保分布式事务原子性的关键所在。（唯一理论上两阶段提交出现问题的情况是当协调者发出提交指令后当机并出现磁盘故障等永久性错误，导致事务不可追踪和恢复）</p>
+<p>从两阶段提交的工作方式来看，很显然，在提交事务的过程中需要在多个节点之间进行协调，而各节点对锁资源的释放必须等到事务最终提交时，这样，比起一阶段提交，两阶段提交在执行同样的事务时会消耗更多时间。事务执行时间的延长意味着锁资源发生冲突的概率增加，当事务的并发量达到一定数量的时候，就会出现大量事务积压甚至出现死锁，系统性能就会严重下滑。这就是使用XA事务。</p>
+<h3 id="一阶段提交"><a href="#一阶段提交" class="headerlink" title="一阶段提交"></a>一阶段提交</h3><p>不像两阶段提交那样复杂，一阶段提交非常直白，就是从应用程序向数据库发出提交请求到数据库完成提交或回滚之后将结果返回给应用程序的过程。一阶段提交不需要“协调者”角色，各结点之间不存在协调操作，因此其事务执行时间比两阶段提交要短，但是提交的“危险期”是每一个事务的实际提交时间，相比于两阶段提交，一阶段提交出现在“不一致”的概率就变大了。但是我们必须注意到：只有当基础设施出现问题的时候(如网络中断，当机等)，一阶段提交才可能会出现“不一致”的情况，相比它的性能优势，很多团队都会选择这一方案。关于在spring环境下如何实现一阶段提交,有一篇非常优秀的文章值得参考：<a href="http://www.javaworld.com/javaworld/jw-01-2009/jw-01-spring-transactions.html?page=5" target="_blank" rel="noopener">http://www.javaworld.com/javaworld/jw-01-2009/jw-01-spring-transactions.html?page=5</a></p>
+<p>像一阶段提交这种模式，前提是应用程序能获取所有的数据源，然后使用同一个事务管理器(这里指是的spring的事务管理器)管理事务。这种模式最典型的应用场景非数据库sharding莫属。但是对于那些基于web service/rpc/jms等构建的高度自治(autonomy)的分布式系统接口，一阶段提交模式是无能为力的，此类场景下，还有最后一种方法可以帮助我们实现“最终一致性”，那就是事务补偿机制。</p>
+<p>一般而言，需要交互的子系统数量较少，并且整个系统在未来不会或很少引入新的子系统且负载长期保持稳定，即无伸缩要求的话，考虑到开发复杂度和工作量，可以选择使用分布式事务。对于时间需求不是很紧，对性能要求很高的系统，应考虑使用一阶段提交或事务补偿机制。对于那些需要进行sharding改造的系统，基本上不应再考虑分布式事务，因为sharding打开了数据库水平伸缩的窗口，使用分布式事务看起来好像是为新打开的窗口又加上了一把枷锁。</p>
 <h3 id="大型网站一致性理的基础理论-CAP-BASE"><a href="#大型网站一致性理的基础理论-CAP-BASE" class="headerlink" title="大型网站一致性理的基础理论-CAP/BASE"></a>大型网站一致性理的基础理论-CAP/BASE</h3><p>我们来了解一下分布式系统的基础理论-CAP。</p>
 <p>CAP理论：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一致性（C）：所有的节点在同一时间读到同样的数据。当数据写入成功后，所有的节点会同事看到这个新的数据。</span><br><span class="line"></span><br><span class="line">可用性（A）：保证无论是成功还是失败，每个请求都能够收到一个反馈。这就是数据的可用性，重点是系统一定要有响应。</span><br><span class="line"></span><br><span class="line">分区容忍性（P）：即便系统中有部分问题或者消息的丢失，但是系统仍能够继续运行。</span><br></pre></td></tr></table></figure></p>
 <p>但是，分布式系统不能同时满足上面三项，一般来说，很多分布式系统在设计时的选择，是放弃一定的一致性，选择AP。</p>
@@ -130,7 +135,8 @@
 <p>但是Paxos协议存在一个问题，如果系统中同事有人提出议案，可能会出现碰撞导致失败。然后大家都是重试，重试仍然可能导致失败。这就会导致活锁。</p>
 <p>解决的办法是在整个集群中设一个Leader，所有的议案都由他来提，这样就可以避免冲突。而引发的新问题就是如果Leader出问题了该如何处理，那就需要再选一个Leader出来。</p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>从工程上来说，如果能够避免分布式事务的引入，那还是避免为好；如果一定要引入分布式事务，可以考虑最终一致性的方法；从实现上来说，就是通过补偿的机制不断重试，让之前因为异常而没有进行到底的操作重试或继续进行，而不是回滚。</p>
-<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p>大型网站系统与JAVA中间件实践</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p>大型网站系统与JAVA中间件实践<br><a href="http://blog.csdn.net/bluishglc/article/details/7612811" target="_blank" rel="noopener"><a href="http://blog.csdn.net/bluishglc/article/details/7612811" target="_blank" rel="noopener">关于分布式事务、两阶段提交、一阶段提交和事务补偿机制的研究</a>
+</a></p>
   
 	</div>
 		<footer class="article-footer clearfix">
@@ -182,7 +188,7 @@
   <div id="toc" class="toc-aside">
   <strong class="toc-title">Contents</strong>
  
- <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式事务是什么？"><span class="toc-number">1.</span> <span class="toc-text">分布式事务是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#两阶段提交"><span class="toc-number">2.</span> <span class="toc-text">两阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#大型网站一致性理的基础理论-CAP-BASE"><span class="toc-number">3.</span> <span class="toc-text">大型网站一致性理的基础理论-CAP/BASE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos协议"><span class="toc-number">4.</span> <span class="toc-text">Paxos协议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">5.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">6.</span> <span class="toc-text">参考文献</span></a></li></ol>
+ <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#分布式事务是什么？"><span class="toc-number">1.</span> <span class="toc-text">分布式事务是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#两阶段提交"><span class="toc-number">2.</span> <span class="toc-text">两阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#一阶段提交"><span class="toc-number">3.</span> <span class="toc-text">一阶段提交</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#大型网站一致性理的基础理论-CAP-BASE"><span class="toc-number">4.</span> <span class="toc-text">大型网站一致性理的基础理论-CAP/BASE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Paxos协议"><span class="toc-number">5.</span> <span class="toc-text">Paxos协议</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">7.</span> <span class="toc-text">参考文献</span></a></li></ol>
  
   </div>
 
@@ -206,11 +212,15 @@
 			
 		
 			
-				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
 			
 		
 			
 				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/分布式事务/" title="分布式事务">分布式事务<sup>1</sup></a></li>
 			
 		
 			
@@ -222,11 +232,11 @@
 			
 		
 			
-				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
 			
 		
 			
-				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
 			
 		
 			
@@ -243,10 +253,6 @@
 		
 			
 				<li><a href="/tags/任务调度/" title="任务调度">任务调度<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/分布式事务/" title="分布式事务">分布式事务<sup>1</sup></a></li>
 			
 		
 			
