@@ -12,10 +12,10 @@
 
     
     <meta name="description" content="1.基本概念JVM实际上是运行在一个具体操作系统上的程序进程，对Java代码而言，JVM就是操作系统的代理。  如图所示是JVM的内存模型及数据交互。JVM的内存模型依然是基于操作系统进程空间的，不过是自己设计了一套内存管理体系以支撑上层的Java代码。 JVM的运行时内存可以简单的分为线程私有和公共内存，线程私有部分">
-<meta name="keywords" content="Java,JVM,内存模型">
+<meta name="keywords" content="JVM,内存模型,Java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM内存模型详解">
-<meta property="og:url" content="http://roaduderfoot.com/2017/12/04/JVM内存模型详解/index.html">
+<meta property="og:url" content="http://roadunderfoot.com/2017/12/04/JVM内存模型详解/index.html">
 <meta property="og:site_name" content="路在脚下">
 <meta property="og:description" content="1.基本概念JVM实际上是运行在一个具体操作系统上的程序进程，对Java代码而言，JVM就是操作系统的代理。  如图所示是JVM的内存模型及数据交互。JVM的内存模型依然是基于操作系统进程空间的，不过是自己设计了一套内存管理体系以支撑上层的Java代码。 JVM的运行时内存可以简单的分为线程私有和公共内存，线程私有部分包含程序计数器、Java栈、native方法栈。全局公共部分包含方法区、堆空间。">
 <meta property="og:locale" content="Java Python">
@@ -61,7 +61,7 @@
 					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
 						<label>Search</label>
 						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
-						<input type="hidden" name="q" value="site:roaduderfoot.com">
+						<input type="hidden" name="q" value="site:roadunderfoot.com">
 					</form>
 					
 					</li>
@@ -124,7 +124,7 @@
 
   <div class="article-tags">
   
-  <span></span> <a href="/tags/Java/">Java</a><a href="/tags/JVM/">JVM</a><a href="/tags/内存模型/">内存模型</a>
+  <span></span> <a href="/tags/JVM/">JVM</a><a href="/tags/内存模型/">内存模型</a><a href="/tags/Java/">Java</a>
   </div>
 
 </div>
@@ -133,7 +133,7 @@
 
 	<div class="article-share" id="share">
 	
-	  <div data-url="http://roaduderfoot.com/2017/12/04/JVM内存模型详解/" data-title="JVM内存模型详解 | 路在脚下" data-tsina="" class="share clearfix">
+	  <div data-url="http://roadunderfoot.com/2017/12/04/JVM内存模型详解/" data-title="JVM内存模型详解 | 路在脚下" data-tsina="" class="share clearfix">
 	  </div>
 	
 	</div>
@@ -199,15 +199,7 @@
 			
 		
 			
-				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
 			
 		
 			
@@ -215,11 +207,31 @@
 			
 		
 			
-				<li><a href="/tags/Spring/" title="Spring">Spring<sup>1</sup></a></li>
+				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
 			
 		
 			
 				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Spring/" title="Spring">Spring<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
 			
 		
 			
@@ -228,18 +240,6 @@
 		
 			
 				<li><a href="/tags/分布式事务/" title="分布式事务">分布式事务<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
 			
 		
 			
