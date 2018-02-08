@@ -11,22 +11,21 @@
     
 
     
-    <meta name="description" content="1.Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。 在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、">
+    <meta name="description" content="Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。 在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常">
 <meta name="keywords" content="Hystrix,熔断,请求超时,限流降级,结果缓存,请求合并,统计,线程池隔离">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Hystrix入门">
 <meta property="og:url" content="http://roadunderfoot.com/2018/02/08/Hystrix入门/index.html">
 <meta property="og:site_name" content="路在脚下">
-<meta property="og:description" content="1.Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。 在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等，如何能够保证在一个依赖出问题的情况下，不会导致整体服务失败，这个就是H">
+<meta property="og:description" content="Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。 在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等，如何能够保证在一个依赖出问题的情况下，不会导致整体服务失败，这个就是Hyst">
 <meta property="og:locale" content="Java Python">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-e370ff9266450efe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-73e60e03d8ff5e7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-d00fb3e56f972794.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2018-02-08T01:21:03.000Z">
+<meta property="og:updated_time" content="2018-02-08T01:24:06.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Hystrix入门">
-<meta name="twitter:description" content="1.Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。 在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等，如何能够保证在一个依赖出问题的情况下，不会导致整体服务失败，这个就是H">
-<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/648342-e370ff9266450efe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta name="twitter:description" content="Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。 在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等，如何能够保证在一个依赖出问题的情况下，不会导致整体服务失败，这个就是Hyst">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/648342-73e60e03d8ff5e7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 
     
     
@@ -94,14 +93,13 @@
 		<div id="toc" class="toc-article">
 			<strong class="toc-title">Contents</strong>
 		
-			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Hystrix是什么"><span class="toc-number">1.</span> <span class="toc-text">1.Hystrix是什么?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-用一个例子快速进入Hystrix"><span class="toc-number">2.</span> <span class="toc-text">2.用一个例子快速进入Hystrix</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Hystrix的配置项"><span class="toc-number">3.</span> <span class="toc-text">3.Hystrix的配置项</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-Hystrix有哪些配置项"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 Hystrix有哪些配置项?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-Hystrix配置解析"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 Hystrix配置解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-实现原理"><span class="toc-number">3.3.</span> <span class="toc-text">4. 实现原理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">4.</span> <span class="toc-text">参考文献</span></a></li></ol>
+			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Hystrix是什么"><span class="toc-number">1.</span> <span class="toc-text">Hystrix是什么?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#用一个例子快速进入Hystrix"><span class="toc-number">2.</span> <span class="toc-text">用一个例子快速进入Hystrix</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Hystrix的配置项"><span class="toc-number">3.</span> <span class="toc-text">Hystrix的配置项</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix有哪些配置项"><span class="toc-number">3.1.</span> <span class="toc-text">Hystrix有哪些配置项?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix配置解析"><span class="toc-number">3.2.</span> <span class="toc-text">Hystrix配置解析</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实现原理"><span class="toc-number">4.</span> <span class="toc-text">实现原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">5.</span> <span class="toc-text">参考文献</span></a></li></ol>
 		
 		</div>
 		
-		<p><img src="http://upload-images.jianshu.io/upload_images/648342-e370ff9266450efe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Hystrix Logo"></p>
-<h3 id="1-Hystrix是什么"><a href="#1-Hystrix是什么" class="headerlink" title="1.Hystrix是什么?"></a>1.Hystrix是什么?</h3><p>hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。</p>
+		<h3 id="Hystrix是什么"><a href="#Hystrix是什么" class="headerlink" title="Hystrix是什么?"></a>Hystrix是什么?</h3><p>hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。</p>
 <p>在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等，如何能够保证在一个依赖出问题的情况下，不会导致整体服务失败，这个就是Hystrix需要做的事情。Hystrix提供了熔断、隔离、Fallback、cache、监控等功能，能够在一个、或多个依赖同时出现问题时保证系统依然可用。</p>
-<h3 id="2-用一个例子快速进入Hystrix"><a href="#2-用一个例子快速进入Hystrix" class="headerlink" title="2.用一个例子快速进入Hystrix"></a>2.用一个例子快速进入Hystrix</h3><p>Hystrix的核心功能，就是在调用远程服务时的熔断机制。下面用一个简单的例子来说明Hystrix的核心功能。</p>
+<h3 id="用一个例子快速进入Hystrix"><a href="#用一个例子快速进入Hystrix" class="headerlink" title="用一个例子快速进入Hystrix"></a>用一个例子快速进入Hystrix</h3><p>Hystrix的核心功能，就是在调用远程服务时的熔断机制。下面用一个简单的例子来说明Hystrix的核心功能。</p>
 <p>1.例子基于spring-boot，所以首先新建一个空的spring-boot项目。建项目的过程此处略过。</p>
 <p>2.添加maven依赖:<br><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.netflix.hystrix<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hystrix-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.netflix.hystrix<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hystrix-metrics-event-stream<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.netflix.hystrix<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hystrix-javanica<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
 <p>3.新建configuration类<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.mogujie.marketing.hystrixTest.configuration;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.contrib.javanica.aop.aspectj.HystrixCommandAspect;</span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.web.servlet.ServletRegistrationBean;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Bean;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HystrixConfiguration</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> HystrixCommandAspect <span class="title">hystrixAspect</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> HystrixCommandAspect();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ServletRegistrationBean <span class="title">hystrixMetricsStreamServlet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        ServletRegistrationBean registration = <span class="keyword">new</span> ServletRegistrationBean(<span class="keyword">new</span> HystrixMetricsStreamServlet());</span><br><span class="line">        registration.addUrlMappings(<span class="string">"/hystrix.stream"</span>);</span><br><span class="line">        <span class="keyword">return</span> registration;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
@@ -111,8 +109,8 @@
 <p>从上面的例子可以快速体会到Hystrix给远程服务调用带来的好处，只需要简单的配置一个注解，就能给远程服务加上超时时间&amp;错误回调。</p>
 <p>Hystrix可以支持RPC、DB、HTTP等远程服务的超时&amp;错误回调，甚至可以做本地服务的超时&amp;错误回调。刚刚的例子就是模拟本地服务执行超时的情况。</p>
 <p>一般来说，RPC框架都有基本的超时机制，但是错误处理和功能降级往往要自己来实现，Hystrix帮我省略了这部分冗余的代码，只需要写一个回调函数，简单配置一下就完工了。</p>
-<h3 id="3-Hystrix的配置项"><a href="#3-Hystrix的配置项" class="headerlink" title="3.Hystrix的配置项"></a>3.Hystrix的配置项</h3><p>那Hystrix有哪些配置项？那些配置项又支持哪些功能？这些功能又在什么情况下被用到呢？解决这些问题是Hystrix进阶的关键。</p>
-<h4 id="3-1-Hystrix有哪些配置项"><a href="#3-1-Hystrix有哪些配置项" class="headerlink" title="3.1 Hystrix有哪些配置项?"></a>3.1 Hystrix有哪些配置项?</h4><p>官方配置项地址:<a href="https://github.com/Netflix/Hystrix/wiki/Configuration" target="_blank" rel="noopener">配置项详解</a>.</p>
+<h3 id="Hystrix的配置项"><a href="#Hystrix的配置项" class="headerlink" title="Hystrix的配置项"></a>Hystrix的配置项</h3><p>那Hystrix有哪些配置项？那些配置项又支持哪些功能？这些功能又在什么情况下被用到呢？解决这些问题是Hystrix进阶的关键。</p>
+<h4 id="Hystrix有哪些配置项"><a href="#Hystrix有哪些配置项" class="headerlink" title="Hystrix有哪些配置项?"></a>Hystrix有哪些配置项?</h4><p>官方配置项地址:<a href="https://github.com/Netflix/Hystrix/wiki/Configuration" target="_blank" rel="noopener">配置项详解</a>.</p>
 <p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#CommandExecution" target="_blank" rel="noopener">Execution 执行</a></p>
 <ul>
 <li>execution.isolation.strategy:设置方法执行的隔离策略。可选线程池或者信号量。具体分析参考这篇文章<a href="http://blog.csdn.net/liuchuanhong1/article/details/73718794" target="_blank" rel="noopener">Hystrix系列-5-Hystrix的资源隔离策略</a>。</li>
@@ -168,7 +166,7 @@
 <li>metrics.rollingStats.timeInMilliseconds：设置统计滚动窗口的长度，以毫秒为单位。用于监控和熔断器。滚动窗口被分隔成桶(bucket)。并进行滚动。 例如这个属性设置10000ms，一个桶就是1s。</li>
 <li>metrics.rollingStats.numBuckets：统计窗口的桶数量</li>
 </ul>
-<h4 id="3-2-Hystrix配置解析"><a href="#3-2-Hystrix配置解析" class="headerlink" title="3.2 Hystrix配置解析"></a>3.2 Hystrix配置解析</h4><ul>
+<h4 id="Hystrix配置解析"><a href="#Hystrix配置解析" class="headerlink" title="Hystrix配置解析"></a>Hystrix配置解析</h4><ul>
 <li>Execution分组下的配置项，指定了方法执行的隔离策略、超时限制等属性。</li>
 <li>Fallback分组下的配置项，指定了最大并发限制，超过并发限制则走降级方法。</li>
 <li>Circuit Breaker分组下的配置项，指定了熔断器的最小请求数、熔断之后的重试间隔、造成熔断的请求失败率。</li>
@@ -177,7 +175,7 @@
 <li>Collapser Properties分组下的配置项，用来支持请求合并功能。当单个请求耗时很大的时候，可以使用请求合并的方式调用批量接口。设置最大请求数，合并请求的等待时间，配置请求结果是否需要缓存。单个请求耗时很低的时候，不建议使用，反而会降低平均请求时延。需要通过评估和计算得出哪种方案更合适。</li>
 <li>Thread Pool Properties分组下的配置项目，指定了方法执行的线程池的初始化参数。</li>
 </ul>
-<h4 id="4-实现原理"><a href="#4-实现原理" class="headerlink" title="4. 实现原理"></a>4. 实现原理</h4><p>Hystrix实现了熔断机制、请求超时、限流降级、结果缓存、请求合并、统计、线程池隔离等功能共同保障应用的稳定性。</p>
+<h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><p>Hystrix实现了熔断机制、请求超时、限流降级、结果缓存、请求合并、统计、线程池隔离等功能共同保障应用的稳定性。</p>
 <p>先来看看官方的流程图：<br><img src="http://upload-images.jianshu.io/upload_images/648342-73e60e03d8ff5e7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Flow  Chart"></p>
 <p>分为以下步骤：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1.初始化HystrixCommand</span><br><span class="line">2.执行Command</span><br><span class="line">3.是否需要走缓存获取结果？</span><br><span class="line">4.是否已经开启了熔断？</span><br><span class="line">5.信号量/线程池拒绝请求？</span><br><span class="line">6.实际执行方法</span><br><span class="line">7.上报结果判断是否开启熔断</span><br><span class="line">8.执行失败走降级方法</span><br><span class="line">9.执行成功结果返回</span><br></pre></td></tr></table></figure></p>
 <p>处理执行成功结果时使用了RxJava(观察者模式)来传递事件，流程如下图所示：<br><img src="http://upload-images.jianshu.io/upload_images/648342-d00fb3e56f972794.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="执行结果返回"></p>
@@ -233,7 +231,7 @@
   <div id="toc" class="toc-aside">
   <strong class="toc-title">Contents</strong>
  
- <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Hystrix是什么"><span class="toc-number">1.</span> <span class="toc-text">1.Hystrix是什么?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-用一个例子快速进入Hystrix"><span class="toc-number">2.</span> <span class="toc-text">2.用一个例子快速进入Hystrix</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Hystrix的配置项"><span class="toc-number">3.</span> <span class="toc-text">3.Hystrix的配置项</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-Hystrix有哪些配置项"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 Hystrix有哪些配置项?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-Hystrix配置解析"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 Hystrix配置解析</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-实现原理"><span class="toc-number">3.3.</span> <span class="toc-text">4. 实现原理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">4.</span> <span class="toc-text">参考文献</span></a></li></ol>
+ <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Hystrix是什么"><span class="toc-number">1.</span> <span class="toc-text">Hystrix是什么?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#用一个例子快速进入Hystrix"><span class="toc-number">2.</span> <span class="toc-text">用一个例子快速进入Hystrix</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Hystrix的配置项"><span class="toc-number">3.</span> <span class="toc-text">Hystrix的配置项</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix有哪些配置项"><span class="toc-number">3.1.</span> <span class="toc-text">Hystrix有哪些配置项?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hystrix配置解析"><span class="toc-number">3.2.</span> <span class="toc-text">Hystrix配置解析</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#实现原理"><span class="toc-number">4.</span> <span class="toc-text">实现原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#参考文献"><span class="toc-number">5.</span> <span class="toc-text">参考文献</span></a></li></ol>
  
   </div>
 
@@ -257,7 +255,27 @@
 			
 		
 			
-				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
+				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/限流降级/" title="限流降级">限流降级<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/结果缓存/" title="结果缓存">结果缓存<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/请求合并/" title="请求合并">请求合并<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/统计/" title="统计">统计<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/线程池隔离/" title="线程池隔离">线程池隔离<sup>1</sup></a></li>
 			
 		
 			
@@ -265,11 +283,23 @@
 			
 		
 			
-				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
 			
 		
 			
 				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
 			
 		
 			
@@ -285,47 +315,15 @@
 			
 		
 			
-				<li><a href="/tags/分布式事务/" title="分布式事务">分布式事务<sup>1</sup></a></li>
-			
-		
-			
 				<li><a href="/tags/Spring/" title="Spring">Spring<sup>1</sup></a></li>
 			
 		
 			
-				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
+				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
 			
 		
 			
 				<li><a href="/tags/任务调度/" title="任务调度">任务调度<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/负载测试/" title="负载测试">负载测试<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/限流降级/" title="限流降级">限流降级<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/结果缓存/" title="结果缓存">结果缓存<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/请求合并/" title="请求合并">请求合并<sup>1</sup></a></li>
 			
 		
 		</ul>
