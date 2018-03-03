@@ -19,7 +19,7 @@
 <meta property="og:site_name" content="路在脚下">
 <meta property="og:description" content="主要内容转自:http://cxy.liuzhihengseo.com/522.html 增加了一些自己的理解。 为啥infoq上的原文已经搜不到了- - 主要技术点包括：异地架构、cache系统优化、拆红包并发策略优化、存储优化。下文是对这些技术点的总结。 异地架构用户分南北，就近接入。南北之间通过专线跨城通信。 微信有上海(北)、深圳(南)连个接入点，用户请求会就近接入到这两个地方。 深圳用户">
 <meta property="og:locale" content="Java Python">
-<meta property="og:updated_time" content="2018-03-03T05:46:37.000Z">
+<meta property="og:updated_time" content="2018-03-03T05:48:27.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="微信红包系统实现">
 <meta name="twitter:description" content="主要内容转自:http://cxy.liuzhihengseo.com/522.html 增加了一些自己的理解。 为啥infoq上的原文已经搜不到了- - 主要技术点包括：异地架构、cache系统优化、拆红包并发策略优化、存储优化。下文是对这些技术点的总结。 异地架构用户分南北，就近接入。南北之间通过专线跨城通信。 微信有上海(北)、深圳(南)连个接入点，用户请求会就近接入到这两个地方。 深圳用户">
@@ -121,7 +121,8 @@
 <p>终于聊到抢红包最核心的问题了，高并发如何解决。</p>
 <p>1.服务rpc调用时，使用红包订单号的hash值为key寻找下一跳地址。对同一个红包的所有拆请求、查询请求，都路由到同一台逻辑机器(servcie层)、同一台DB中处理。这也就解决了之前的dao单机内存容量有限的问题。</p>
 <p>2.Dao搭建本机Memcache内存cache，控制同一红包并发个数。</p>
-<p>在DB的接入机dao中，搭建本机内存cache。以红包订单号为key，对同一个红包的拆请求做原子计数，控制同一时刻能进DB中拆红包的并发请求数。<code>比如说有个红包允许10个人领取，有100个人请求拆红包，对这100个人用本地Memcache缓存的incr标上1到100的序号并放入本地队列。本地有一个AtomicInteger代表已拆红包的数量，一个AtomicInteger代表正在处理的红包请求。并发的从本地队列中获取请求做处理，处理成功则增加已拆红包的数量，失败(比如风控)并且(已拆红包数量+正在处理的用户)没超过红包总数限制则继续请求本地队列。</code></p>
+<p>在DB的接入机dao中，搭建本机内存cache。以红包订单号为key，对同一个红包的拆请求做原子计数，控制同一时刻能进DB中拆红包的并发请求数。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">比如说有个红包允许10个人领取，有100个人请求拆红包，对这100个人用本地Memcache缓存的incr标上1到100的序号并放入本地队列。本地有一个AtomicInteger代表已拆红包的数量，一个AtomicInteger代表正在处理的红包请求。并发的从本地队列中获取请求做处理，处理成功则增加已拆红包的数量，失败(比如风控)并且(已拆红包数量+正在处理的用户)没超过红包总数限制则继续请求本地队列。</span><br></pre></td></tr></table></figure>
 <p>这个策略的实施，依赖于请求路由按红包订单hash值走，确保同一红包的所有请求路由到同一逻辑层机器。</p>
 <p>3.多层级并发量控制<br>(1)发红包控制<br>发红包是业务流程的入口，控制了这里的并发量，代表着控制了红包业务整体的并发量。在发红包的业务链路里，做了多层的流量控制，确保产生的有效红包量级在可控范围。</p>
 <p>也就是说对于可以发的红包，有一个整体的数量控制。当发的红包数量超过系统能能承载的并发量时，可以主动做限流降级防止系统因为并发量超过水位限制而崩溃。</p>
@@ -239,6 +240,14 @@
 			
 		
 			
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+			
+		
+			
 				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
 			
 		
@@ -267,14 +276,6 @@
 			
 		
 			
-				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
-			
-		
-			
 				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
 			
 		
@@ -283,7 +284,7 @@
 			
 		
 			
-				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+				<li><a href="/tags/内存模型/" title="内存模型">内存模型<sup>1</sup></a></li>
 			
 		
 			
@@ -295,19 +296,19 @@
 			
 		
 			
-				<li><a href="/tags/负载测试/" title="负载测试">负载测试<sup>1</sup></a></li>
+				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
 			
 		
 			
-				<li><a href="/tags/分布式事务/" title="分布式事务">分布式事务<sup>1</sup></a></li>
+				<li><a href="/tags/Spring/" title="Spring">Spring<sup>1</sup></a></li>
 			
 		
 			
-				<li><a href="/tags/红包系统/" title="红包系统">红包系统<sup>1</sup></a></li>
+				<li><a href="/tags/Quartz/" title="Quartz">Quartz<sup>1</sup></a></li>
 			
 		
 			
-				<li><a href="/tags/异地双活/" title="异地双活">异地双活<sup>1</sup></a></li>
+				<li><a href="/tags/任务调度/" title="任务调度">任务调度<sup>1</sup></a></li>
 			
 		
 		</ul>
