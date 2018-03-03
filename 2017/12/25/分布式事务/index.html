@@ -121,10 +121,10 @@
 <p>像一阶段提交这种模式，前提是应用程序能获取所有的数据源，然后使用同一个事务管理器(这里指是的spring的事务管理器)管理事务。这种模式最典型的应用场景非数据库sharding莫属。但是对于那些基于web service/rpc/jms等构建的高度自治(autonomy)的分布式系统接口，一阶段提交模式是无能为力的，此类场景下，还有最后一种方法可以帮助我们实现“最终一致性”，那就是事务补偿机制。</p>
 <p>一般而言，需要交互的子系统数量较少，并且整个系统在未来不会或很少引入新的子系统且负载长期保持稳定，即无伸缩要求的话，考虑到开发复杂度和工作量，可以选择使用分布式事务。对于时间需求不是很紧，对性能要求很高的系统，应考虑使用一阶段提交或事务补偿机制。对于那些需要进行sharding改造的系统，基本上不应再考虑分布式事务，因为sharding打开了数据库水平伸缩的窗口，使用分布式事务看起来好像是为新打开的窗口又加上了一把枷锁。</p>
 <h3 id="大型网站一致性理的基础理论-CAP-BASE"><a href="#大型网站一致性理的基础理论-CAP-BASE" class="headerlink" title="大型网站一致性理的基础理论-CAP/BASE"></a>大型网站一致性理的基础理论-CAP/BASE</h3><p>我们来了解一下分布式系统的基础理论-CAP。</p>
-<p>CAP理论：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一致性（C）：所有的节点在同一时间读到同样的数据。当数据写入成功后，所有的节点会同事看到这个新的数据。</span><br><span class="line"></span><br><span class="line">可用性（A）：保证无论是成功还是失败，每个请求都能够收到一个反馈。这就是数据的可用性，重点是系统一定要有响应。</span><br><span class="line"></span><br><span class="line">分区容忍性（P）：即便系统中有部分问题或者消息的丢失，但是系统仍能够继续运行。</span><br></pre></td></tr></table></figure></p>
+<p>CAP理论：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">一致性（C）：所有的节点在同一时间读到同样的数据。当数据写入成功后，所有的节点会同事看到这个新的数据。</span><br><span class="line"></span><br><span class="line">可用性（A）：保证无论是成功还是失败，每个请求都能够收到一个反馈。这就是数据的可用性，重点是系统一定要有响应。</span><br><span class="line"></span><br><span class="line">分区容忍性（P）：即便系统中有部分问题或者消息的丢失，但是系统仍能够继续运行。</span><br></pre></td></tr></table></figure></p>
 <p>但是，分布式系统不能同时满足上面三项，一般来说，很多分布式系统在设计时的选择，是放弃一定的一致性，选择AP。</p>
 <p>再来看看BASE：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">基本可用：允许分区失败</span><br><span class="line">软状态：接受一段时间的状态不同步</span><br><span class="line">最终一致：保证最终的数据的状态是一致的</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">基本可用：允许分区失败</span><br><span class="line">软状态：接受一段时间的状态不同步</span><br><span class="line">最终一致：保证最终的数据的状态是一致的</span><br></pre></td></tr></table></figure>
 <p>所以当我们选择了AP，那么对于C，采用的策略就是保证最终是一致的。</p>
 <p>强一致：所有的节点在同一时间读到同样的数据。</p>
 <p>最终一致：牺牲一部分的一致性，可以接受数据存在不一致的问题，但是通过重试或其他手段，保证数据最终会达到一致状态</p>

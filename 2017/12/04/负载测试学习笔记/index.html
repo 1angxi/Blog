@@ -11,18 +11,18 @@
     
 
     
-    <meta name="description" content="当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式： 1load average: 0.09, 0.05, 0.01 三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说">
+    <meta name="description" content="当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式： load average: 0.09, 0.05, 0.01 三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说明">
 <meta name="keywords" content="Linux,负载测试">
 <meta property="og:type" content="article">
 <meta property="og:title" content="负载测试学习笔记">
 <meta property="og:url" content="http://roadunderfoot.com/2017/12/04/负载测试学习笔记/index.html">
 <meta property="og:site_name" content="roadunderfoot">
-<meta property="og:description" content="当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式： 1load average: 0.09, 0.05, 0.01 三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说明服务器的负载越大，这也可能是服务器出现某种问题的信号。 怎么会有三个数字的确让">
+<meta property="og:description" content="当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式： load average: 0.09, 0.05, 0.01 三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说明服务器的负载越大，这也可能是服务器出现某种问题的信号。 怎么会有三个数字的确让人">
 <meta property="og:locale" content="Java Python Linux">
 <meta property="og:updated_time" content="2017-12-04T07:24:41.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="负载测试学习笔记">
-<meta name="twitter:description" content="当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式： 1load average: 0.09, 0.05, 0.01 三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说明服务器的负载越大，这也可能是服务器出现某种问题的信号。 怎么会有三个数字的确让">
+<meta name="twitter:description" content="当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式： load average: 0.09, 0.05, 0.01 三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说明服务器的负载越大，这也可能是服务器出现某种问题的信号。 怎么会有三个数字的确让人">
 
     
     
@@ -95,10 +95,10 @@
 		</div>
 		
 		<p>当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个<code>load average</code>条目，也就是负载均值的意思。一般是这样的格式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load average: 0.09, 0.05, 0.01</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">load average: 0.09, 0.05, 0.01</span><br></pre></td></tr></table></figure>
 <p>三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说明服务器的负载越大，这也可能是服务器出现某种问题的信号。</p>
 <p>怎么会有三个数字的确让人困扰。我们知道，0.65、0.42、0.36 分别说明上一分钟、最后五分钟以及最后十五分钟的系统负载均值。那么这又带来了一个问题：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">我们以哪个数字为准？一分钟？五分钟？还是十五分钟？</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">我们以哪个数字为准？一分钟？五分钟？还是十五分钟？</span><br></pre></td></tr></table></figure>
 <p>一般来说应该着眼于五分钟或者十五分钟的平均数值。坦白讲，如果前一分钟的负载情况是 1.00，那么仍可以认定服务器情况是正常的。 但是如果十五分钟的数值仍然保持在 1.00，那么就值得注意了</p>
 <p>那么如何理解这些数字背后的含义呢？1.0是好还是坏？</p>
 <p>load average代表的其实是cpu的负载率，具体数字的含义<a href="http://os.51cto.com/art/200912/173219.htm" target="_blank" rel="noopener">详解Linux中Load average负载</a>举了个很好的例子来说明。</p>
@@ -121,7 +121,7 @@
 <p>回到我们上面有关车辆过桥的比喻。1.00 我说过是“一条单车道的道路”。那么在单车道 1.00 情况中，说明这桥梁已经被车塞满了。而在双处理器系统中，这意味着多出了一倍的 负载，也就是说还有 50% 的剩余系统资源 — 因为还有另外条车道可以通行。</p>
 <p>那么我如何得知我的系统装备了多少核心的处理器？</p>
 <p>在 Linux 下，可以使用</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /proc/cpuinfo</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat /proc/cpuinfo</span><br></pre></td></tr></table></figure>
 <p>t<br>获取你系统上的每个处理器的信息。</p>
 <p><code>grep -c &#39;model name&#39; /proc/cpuinfo</code>命令，直接返回CPU的总核心数。</p>
 <p><strong>参考文献:</strong><br><a href="http://www.ruanyifeng.com/blog/2011/07/linux_load_average_explained.html" target="_blank" rel="noopener">理解Linux系统负荷</a></p>

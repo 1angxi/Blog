@@ -98,7 +98,7 @@
 <p>典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到新的库和表当中。</p>
 <p>其次就是经过了一段时间之后，需求有很大变化的时候，需要扩充单表字段。单纯的alter对于有很多数据的单表并不友好，会导致单表被锁，线上写请求超时，这有时是不可容忍的。</p>
 <p>所以我们需要有数据迁移，数据迁移往往对应的是需求的变化、业务的增长。</p>
-<h3 id="怎么做数据迁移？"><a href="#怎么做数据迁移？" class="headerlink" title="怎么做数据迁移？"></a>怎么做数据迁移？</h3><p>想象一下我们如果要做数据迁移会有哪些步骤。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.逐行读取线上表的数据</span><br><span class="line">2.根据业务需要，对每行数据做特殊处理</span><br><span class="line">3.数据逐行写入到新的表中</span><br><span class="line">4.线上切换到新的数据表</span><br></pre></td></tr></table></figure></p>
+<h3 id="怎么做数据迁移？"><a href="#怎么做数据迁移？" class="headerlink" title="怎么做数据迁移？"></a>怎么做数据迁移？</h3><p>想象一下我们如果要做数据迁移会有哪些步骤。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1.逐行读取线上表的数据</span><br><span class="line">2.根据业务需要，对每行数据做特殊处理</span><br><span class="line">3.数据逐行写入到新的表中</span><br><span class="line">4.线上切换到新的数据表</span><br></pre></td></tr></table></figure></p>
 <p>看起来很简单，但是这里有一个问题需要解决。</p>
 <h3 id="如何实现无缝迁移？"><a href="#如何实现无缝迁移？" class="headerlink" title="如何实现无缝迁移？"></a>如何实现无缝迁移？</h3><p>在读取线上表的过程中，有可能出现线上表数据被update的情况。此外，读取完成线上表之后，有可能出现线上insert数据的情况。最后结果就是同步数据过程中就会马上出现新表和旧表数据不一致的地方。这个时候就需要应用停机来保证新表和旧表数据一致。但是如果不能接受长时间的停机，那该怎么办呢？</p>
 <p>可以考虑的方案是，在开始进行数据迁移时，记录增量日志，在迁移完成后，再对增量日志做处理。在最后，可以把要被迁移的数据的写暂停(应用停机)，保证增量数据都处理完成后，再切换数据源，放开所有的写，完成迁移工作。</p>
