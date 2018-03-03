@@ -1,10 +1,10 @@
 
  <!DOCTYPE HTML>
-<html lang="Java Python">
+<html lang="Java Python Linux">
 <head>
   <meta charset="UTF-8">
   
-    <title>JVM内存模型详解 | 路在脚下</title>
+    <title>JVM内存模型详解 | roadunderfoot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
     
     <meta name="author" content="乾坤">
@@ -12,13 +12,13 @@
 
     
     <meta name="description" content="1.基本概念JVM实际上是运行在一个具体操作系统上的程序进程，对Java代码而言，JVM就是操作系统的代理。  如图所示是JVM的内存模型及数据交互。JVM的内存模型依然是基于操作系统进程空间的，不过是自己设计了一套内存管理体系以支撑上层的Java代码。 JVM的运行时内存可以简单的分为线程私有和公共内存，线程私有部分">
-<meta name="keywords" content="JVM,内存模型,Java">
+<meta name="keywords" content="Java,JVM,内存模型">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM内存模型详解">
 <meta property="og:url" content="http://roadunderfoot.com/2017/12/04/JVM内存模型详解/index.html">
-<meta property="og:site_name" content="路在脚下">
+<meta property="og:site_name" content="roadunderfoot">
 <meta property="og:description" content="1.基本概念JVM实际上是运行在一个具体操作系统上的程序进程，对Java代码而言，JVM就是操作系统的代理。  如图所示是JVM的内存模型及数据交互。JVM的内存模型依然是基于操作系统进程空间的，不过是自己设计了一套内存管理体系以支撑上层的Java代码。 JVM的运行时内存可以简单的分为线程私有和公共内存，线程私有部分包含程序计数器、Java栈、native方法栈。全局公共部分包含方法区、堆空间。">
-<meta property="og:locale" content="Java Python">
+<meta property="og:locale" content="Java Python Linux">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/648342-8751283d73ba2634.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:updated_time" content="2017-12-04T02:11:59.000Z">
 <meta name="twitter:card" content="summary">
@@ -43,14 +43,14 @@
 <div>
 		
 			<div id="imglogo">
-				<a href="/"><img src="/img/logo.svg" alt="路在脚下" title="路在脚下"/></a>
+				<a href="/"><img src="/img/logo.svg" alt="roadunderfoot" title="roadunderfoot"/></a>
 			</div>
 			
 			<div id="textlogo">
-				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
-				<h2 class="blog-motto">记录在人世的行走</h2>
+				<h1 class="site-name"><a href="/" title="roadunderfoot">roadunderfoot</a></h1>
+				<h2 class="blog-motto">roadunderfoot</h2>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -60,7 +60,7 @@
  					
 					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
 						<label>Search</label>
-						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
 						<input type="hidden" name="q" value="site:roadunderfoot.com">
 					</form>
 					
@@ -83,14 +83,14 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-12-04T02:11:31.000Z" itemprop="datePublished"> 发表于 2017-12-04</time>
+    <time datetime="2017-12-04T10:11:31.000Z" itemprop="datePublished"> Published 2017-12-04</time>
     
   </p>
 </header>
 	<div class="article-content">
 		
 		<div id="toc" class="toc-article">
-			<strong class="toc-title">文章目录</strong>
+			<strong class="toc-title">Contents</strong>
 		
 			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-基本概念"><span class="toc-number">1.</span> <span class="toc-text">1.基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-程序计数器"><span class="toc-number">2.</span> <span class="toc-text">2.程序计数器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Java方法栈"><span class="toc-number">3.</span> <span class="toc-text">3.Java方法栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-native方法栈"><span class="toc-number">4.</span> <span class="toc-text">4.native方法栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Java堆"><span class="toc-number">5.</span> <span class="toc-text">5.Java堆</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-方法区"><span class="toc-number">6.</span> <span class="toc-text">6.方法区</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-运行时常量池"><span class="toc-number">7.</span> <span class="toc-text">7.运行时常量池</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-直接内存"><span class="toc-number">8.</span> <span class="toc-text">8.直接内存</span></a></li></ol>
 		
@@ -124,7 +124,7 @@
 
   <div class="article-tags">
   
-  <span></span> <a href="/tags/JVM/">JVM</a><a href="/tags/内存模型/">内存模型</a><a href="/tags/Java/">Java</a>
+  <span></span> <a href="/tags/Java/">Java</a><a href="/tags/JVM/">JVM</a><a href="/tags/内存模型/">内存模型</a>
   </div>
 
 </div>
@@ -133,7 +133,7 @@
 
 	<div class="article-share" id="share">
 	
-	  <div data-url="http://roadunderfoot.com/2017/12/04/JVM内存模型详解/" data-title="JVM内存模型详解 | 路在脚下" data-tsina="" class="share clearfix">
+	  <div data-url="http://roadunderfoot.com/2017/12/04/JVM内存模型详解/" data-title="JVM内存模型详解 | roadunderfoot" data-tsina="" class="share clearfix">
 	  </div>
 	
 	</div>
@@ -170,24 +170,24 @@
 
 
 </div>  
-      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
 
   <div id="toc" class="toc-aside">
-  <strong class="toc-title">文章目录</strong>
+  <strong class="toc-title">Contents</strong>
  
  <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-基本概念"><span class="toc-number">1.</span> <span class="toc-text">1.基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-程序计数器"><span class="toc-number">2.</span> <span class="toc-text">2.程序计数器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Java方法栈"><span class="toc-number">3.</span> <span class="toc-text">3.Java方法栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-native方法栈"><span class="toc-number">4.</span> <span class="toc-text">4.native方法栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Java堆"><span class="toc-number">5.</span> <span class="toc-text">5.Java堆</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-方法区"><span class="toc-number">6.</span> <span class="toc-text">6.方法区</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-运行时常量池"><span class="toc-number">7.</span> <span class="toc-text">7.运行时常量池</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-直接内存"><span class="toc-number">8.</span> <span class="toc-text">8.直接内存</span></a></li></ol>
  
   </div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
 <aside class="clearfix">
 
   
 
   
 <div class="tagslist">
-	<p class="asidetitle">标签</p>
+	<p class="asidetitle">Tags</p>
 		<ul class="clearfix">
 		
 			
@@ -199,19 +199,11 @@
 			
 		
 			
-				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
 			
 		
 			
 				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
 			
 		
 			
@@ -235,11 +227,7 @@
 			
 		
 			
-				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
 			
 		
 			
@@ -247,7 +235,7 @@
 			
 		
 			
-				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
 			
 		
 			
@@ -255,7 +243,19 @@
 			
 		
 			
-				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
 			
 		
 			
@@ -276,7 +276,7 @@
 
   
   <div class="archiveslist">
-    <p class="asidetitle"><a href="/archives">归档</a></p>
+    <p class="asidetitle"><a href="/archives">Archives</a></p>
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
   </div>
 
@@ -499,7 +499,7 @@ $(document).ready(function(){
 <!-- Totop Begin -->
 
 	<div id="totop">
-	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
 	</div>
 	<script src="/js/totop.js"></script>
 

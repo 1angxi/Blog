@@ -1,10 +1,10 @@
 
  <!DOCTYPE HTML>
-<html lang="Java Python">
+<html lang="Java Python Linux">
 <head>
   <meta charset="UTF-8">
   
-    <title>Spring中使用Quartz来做单机任务调度 | 路在脚下</title>
+    <title>Spring中使用Quartz来做单机任务调度 | roadunderfoot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
     
     <meta name="author" content="乾坤">
@@ -16,9 +16,9 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="Spring中使用Quartz来做单机任务调度">
 <meta property="og:url" content="http://roadunderfoot.com/2017/12/08/Spring中使用Quartz来做单机任务调度/index.html">
-<meta property="og:site_name" content="路在脚下">
+<meta property="og:site_name" content="roadunderfoot">
 <meta property="og:description" content="背景开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。 但是，分布式任务调度中间件往往是基于一个zookeeper集群来做任务调度的。如果zookeeper集群出了问题，任务调度就挂街了。">
-<meta property="og:locale" content="Java Python">
+<meta property="og:locale" content="Java Python Linux">
 <meta property="og:updated_time" content="2017-12-07T16:42:06.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Spring中使用Quartz来做单机任务调度">
@@ -41,14 +41,14 @@
 <div>
 		
 			<div id="imglogo">
-				<a href="/"><img src="/img/logo.svg" alt="路在脚下" title="路在脚下"/></a>
+				<a href="/"><img src="/img/logo.svg" alt="roadunderfoot" title="roadunderfoot"/></a>
 			</div>
 			
 			<div id="textlogo">
-				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
-				<h2 class="blog-motto">记录在人世的行走</h2>
+				<h1 class="site-name"><a href="/" title="roadunderfoot">roadunderfoot</a></h1>
+				<h2 class="blog-motto">roadunderfoot</h2>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -58,7 +58,7 @@
  					
 					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
 						<label>Search</label>
-						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
 						<input type="hidden" name="q" value="site:roadunderfoot.com">
 					</form>
 					
@@ -81,14 +81,14 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-12-07T16:41:38.000Z" itemprop="datePublished"> 发表于 2017-12-08</time>
+    <time datetime="2017-12-08T00:41:38.000Z" itemprop="datePublished"> Published 2017-12-08</time>
     
   </p>
 </header>
 	<div class="article-content">
 		
 		<div id="toc" class="toc-article">
-			<strong class="toc-title">文章目录</strong>
+			<strong class="toc-title">Contents</strong>
 		
 			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#QuartzTask"><span class="toc-number">2.</span> <span class="toc-text">QuartzTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EmptyTask"><span class="toc-number">3.</span> <span class="toc-text">EmptyTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanPostProcessor"><span class="toc-number">4.</span> <span class="toc-text">BeanPostProcessor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SchedulerManager"><span class="toc-number">5.</span> <span class="toc-text">SchedulerManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ScheduleTaskExecutor"><span class="toc-number">6.</span> <span class="toc-text">ScheduleTaskExecutor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#存在的问题"><span class="toc-number">7.</span> <span class="toc-text">存在的问题</span></a></li></ol>
 		
@@ -129,7 +129,7 @@
 
 	<div class="article-share" id="share">
 	
-	  <div data-url="http://roadunderfoot.com/2017/12/08/Spring中使用Quartz来做单机任务调度/" data-title="Spring中使用Quartz来做单机任务调度 | 路在脚下" data-tsina="" class="share clearfix">
+	  <div data-url="http://roadunderfoot.com/2017/12/08/Spring中使用Quartz来做单机任务调度/" data-title="Spring中使用Quartz来做单机任务调度 | roadunderfoot" data-tsina="" class="share clearfix">
 	  </div>
 	
 	</div>
@@ -143,7 +143,7 @@
 <nav class="article-nav clearfix">
  
  <div class="prev" >
- <a href="/2017/12/23/MySQL为例如何实现数据迁移/" title="MySQL为例如何实现数据迁移">
+ <a href="/2017/12/24/MySQL为例如何实现数据迁移/" title="MySQL为例如何实现数据迁移">
   <strong>上一篇：</strong><br/>
   <span>
   MySQL为例如何实现数据迁移</span>
@@ -166,24 +166,24 @@
 
 
 </div>  
-      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
 
   <div id="toc" class="toc-aside">
-  <strong class="toc-title">文章目录</strong>
+  <strong class="toc-title">Contents</strong>
  
  <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#QuartzTask"><span class="toc-number">2.</span> <span class="toc-text">QuartzTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EmptyTask"><span class="toc-number">3.</span> <span class="toc-text">EmptyTask</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BeanPostProcessor"><span class="toc-number">4.</span> <span class="toc-text">BeanPostProcessor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SchedulerManager"><span class="toc-number">5.</span> <span class="toc-text">SchedulerManager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ScheduleTaskExecutor"><span class="toc-number">6.</span> <span class="toc-text">ScheduleTaskExecutor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#存在的问题"><span class="toc-number">7.</span> <span class="toc-text">存在的问题</span></a></li></ol>
  
   </div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
 <aside class="clearfix">
 
   
 
   
 <div class="tagslist">
-	<p class="asidetitle">标签</p>
+	<p class="asidetitle">Tags</p>
 		<ul class="clearfix">
 		
 			
@@ -195,19 +195,11 @@
 			
 		
 			
-				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
 			
 		
 			
 				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
 			
 		
 			
@@ -231,11 +223,7 @@
 			
 		
 			
-				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
 			
 		
 			
@@ -243,7 +231,7 @@
 			
 		
 			
-				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
 			
 		
 			
@@ -251,7 +239,19 @@
 			
 		
 			
-				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
 			
 		
 			
@@ -272,7 +272,7 @@
 
   
   <div class="archiveslist">
-    <p class="asidetitle"><a href="/archives">归档</a></p>
+    <p class="asidetitle"><a href="/archives">Archives</a></p>
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
   </div>
 
@@ -495,7 +495,7 @@ $(document).ready(function(){
 <!-- Totop Begin -->
 
 	<div id="totop">
-	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
 	</div>
 	<script src="/js/totop.js"></script>
 

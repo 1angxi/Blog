@@ -1,10 +1,10 @@
 
  <!DOCTYPE HTML>
-<html lang="Java Python">
+<html lang="Java Python Linux">
 <head>
   <meta charset="UTF-8">
   
-    <title>微信红包系统实现 | 路在脚下</title>
+    <title>微信红包系统实现 | roadunderfoot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
     
     <meta name="author" content="乾坤">
@@ -16,9 +16,9 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="微信红包系统实现">
 <meta property="og:url" content="http://roadunderfoot.com/2018/03/03/微信红包系统实现/index.html">
-<meta property="og:site_name" content="路在脚下">
+<meta property="og:site_name" content="roadunderfoot">
 <meta property="og:description" content="主要内容转自:http://cxy.liuzhihengseo.com/522.html 增加了一些自己的理解。 为啥infoq上的原文已经搜不到了- - 主要技术点包括：异地架构、cache系统优化、拆红包并发策略优化、存储优化。下文是对这些技术点的总结。 异地架构用户分南北，就近接入。南北之间通过专线跨城通信。 微信有上海(北)、深圳(南)连个接入点，用户请求会就近接入到这两个地方。 深圳用户">
-<meta property="og:locale" content="Java Python">
+<meta property="og:locale" content="Java Python Linux">
 <meta property="og:updated_time" content="2018-03-03T05:48:27.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="微信红包系统实现">
@@ -41,14 +41,14 @@
 <div>
 		
 			<div id="imglogo">
-				<a href="/"><img src="/img/logo.svg" alt="路在脚下" title="路在脚下"/></a>
+				<a href="/"><img src="/img/logo.svg" alt="roadunderfoot" title="roadunderfoot"/></a>
 			</div>
 			
 			<div id="textlogo">
-				<h1 class="site-name"><a href="/" title="路在脚下">路在脚下</a></h1>
-				<h2 class="blog-motto">记录在人世的行走</h2>
+				<h1 class="site-name"><a href="/" title="roadunderfoot">roadunderfoot</a></h1>
+				<h2 class="blog-motto">roadunderfoot</h2>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -58,7 +58,7 @@
  					
 					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
 						<label>Search</label>
-						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
 						<input type="hidden" name="q" value="site:roadunderfoot.com">
 					</form>
 					
@@ -81,14 +81,14 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2018-03-03T05:44:04.000Z" itemprop="datePublished"> 发表于 2018-03-03</time>
+    <time datetime="2018-03-03T13:44:04.000Z" itemprop="datePublished"> Published 2018-03-03</time>
     
   </p>
 </header>
 	<div class="article-content">
 		
 		<div id="toc" class="toc-article">
-			<strong class="toc-title">文章目录</strong>
+			<strong class="toc-title">Contents</strong>
 		
 			<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#异地架构"><span class="toc-number">1.</span> <span class="toc-text">异地架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#用户数据写多读少"><span class="toc-number">2.</span> <span class="toc-text">用户数据写多读少</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#南北流量灵活调控"><span class="toc-number">3.</span> <span class="toc-text">南北流量灵活调控</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#预订单"><span class="toc-number">4.</span> <span class="toc-text">预订单</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拆红包入账异步化"><span class="toc-number">5.</span> <span class="toc-text">拆红包入账异步化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#发拆落地，其他操作双重缓存"><span class="toc-number">6.</span> <span class="toc-text">发拆落地，其他操作双重缓存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DB写同步cache，容忍少量不一致"><span class="toc-number">7.</span> <span class="toc-text">DB写同步cache，容忍少量不一致</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#处理高并发"><span class="toc-number">8.</span> <span class="toc-text">处理高并发</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#红包算法"><span class="toc-number">9.</span> <span class="toc-text">红包算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#稳定性保障"><span class="toc-number">10.</span> <span class="toc-text">稳定性保障</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">11.</span> <span class="toc-text">总结</span></a></li></ol>
 		
@@ -182,7 +182,7 @@
 
 	<div class="article-share" id="share">
 	
-	  <div data-url="http://roadunderfoot.com/2018/03/03/微信红包系统实现/" data-title="微信红包系统实现 | 路在脚下" data-tsina="" class="share clearfix">
+	  <div data-url="http://roadunderfoot.com/2018/03/03/微信红包系统实现/" data-title="微信红包系统实现 | roadunderfoot" data-tsina="" class="share clearfix">
 	  </div>
 	
 	</div>
@@ -211,24 +211,24 @@
 
 
 </div>  
-      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
 
   <div id="toc" class="toc-aside">
-  <strong class="toc-title">文章目录</strong>
+  <strong class="toc-title">Contents</strong>
  
  <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#异地架构"><span class="toc-number">1.</span> <span class="toc-text">异地架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#用户数据写多读少"><span class="toc-number">2.</span> <span class="toc-text">用户数据写多读少</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#南北流量灵活调控"><span class="toc-number">3.</span> <span class="toc-text">南北流量灵活调控</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#预订单"><span class="toc-number">4.</span> <span class="toc-text">预订单</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#拆红包入账异步化"><span class="toc-number">5.</span> <span class="toc-text">拆红包入账异步化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#发拆落地，其他操作双重缓存"><span class="toc-number">6.</span> <span class="toc-text">发拆落地，其他操作双重缓存</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DB写同步cache，容忍少量不一致"><span class="toc-number">7.</span> <span class="toc-text">DB写同步cache，容忍少量不一致</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#处理高并发"><span class="toc-number">8.</span> <span class="toc-text">处理高并发</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#红包算法"><span class="toc-number">9.</span> <span class="toc-text">红包算法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#稳定性保障"><span class="toc-number">10.</span> <span class="toc-text">稳定性保障</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">11.</span> <span class="toc-text">总结</span></a></li></ol>
  
   </div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
 <aside class="clearfix">
 
   
 
   
 <div class="tagslist">
-	<p class="asidetitle">标签</p>
+	<p class="asidetitle">Tags</p>
 		<ul class="clearfix">
 		
 			
@@ -240,19 +240,11 @@
 			
 		
 			
-				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
 			
 		
 			
 				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
 			
 		
 			
@@ -276,11 +268,7 @@
 			
 		
 			
-				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
 			
 		
 			
@@ -288,7 +276,7 @@
 			
 		
 			
-				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
+				<li><a href="/tags/代理模式/" title="代理模式">代理模式<sup>1</sup></a></li>
 			
 		
 			
@@ -296,7 +284,19 @@
 			
 		
 			
-				<li><a href="/tags/JVM/" title="JVM">JVM<sup>1</sup></a></li>
+				<li><a href="/tags/Hystrix/" title="Hystrix">Hystrix<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
 			
 		
 			
@@ -317,7 +317,7 @@
 
   
   <div class="archiveslist">
-    <p class="asidetitle"><a href="/archives">归档</a></p>
+    <p class="asidetitle"><a href="/archives">Archives</a></p>
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
   </div>
 
@@ -540,7 +540,7 @@ $(document).ready(function(){
 <!-- Totop Begin -->
 
 	<div id="totop">
-	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
 	</div>
 	<script src="/js/totop.js"></script>
 
