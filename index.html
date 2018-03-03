@@ -44,7 +44,7 @@
 			
 			<div id="textlogo">
 				<h1 class="site-name"><a href="/" title="roadunderfoot">roadunderfoot</a></h1>
-				<h2 class="blog-motto">roadunderfoot</h2>
+				<h2 class="blog-motto">搬砖程序员</h2>
 			</div>
 			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
 			</a></div>
@@ -68,217 +68,892 @@
     <div id="container">
       <div id="main">
 
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2018/03/03/微信红包系统实现/" title="微信红包系统实现" itemprop="url">
-  
-    <h1 itemprop="name">微信红包系统实现</h1>
+   
     
-     
-           <p itemprop="description" >主要内容转自:http://cxy.liuzhihengseo.com/522.html
-增加了一些自己的理解。
-为啥infoq上的原文已经搜不到了- -
-主要技术点包括：异地架构、cache系统优化、拆红包并发策略优化、存储优化。下文是对这些技术点的总结。
-异地架构用户分南北，</p>
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2018/03/03/微信红包系统实现/" title="微信红包系统实现" itemprop="url">微信红包系统实现</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2018-03-03T13:44:04.000Z" itemprop="datePublished"> Published 2018-03-03</time>
+    
+  </p>
+</header>
+    <div class="article-content">
         
-    
-    <time datetime="2018-03-03T13:44:04.000Z" itemprop="datePublished">2018-03-03</time>
-  </a>
-</section>
+        <p>主要内容转自:<a href="http://cxy.liuzhihengseo.com/522.html" target="_blank" rel="noopener">http://cxy.liuzhihengseo.com/522.html</a></p>
+<p>增加了一些自己的理解。</p>
+<p>为啥infoq上的原文已经搜不到了- -</p>
+<p>主要技术点包括：异地架构、cache系统优化、拆红包并发策略优化、存储优化。下文是对这些技术点的总结。</p>
+<h3 id="异地架构"><a href="#异地架构" class="headerlink" title="异地架构"></a>异地架构</h3><p>用户分南北，就近接入。南北之间通过专线跨城通信。</p>
+<p>微信有上海(北)、深圳(南)连个接入点，用户请求会就近接入到这两个地方。</p>
+<p>深圳用户创建红包时，红包订单会就近落在深圳。</p>
+<p>深圳用户抢红包直接接入完成闭环，靠近上海的用户会先接入上海，通过跨城专线把请求转发到深圳完成闭环。</p>
+<p><code>好处是：用户接入的网络时延变低；南北系统分摊流量降低风险；</code></p>
+<h3 id="用户数据写多读少"><a href="#用户数据写多读少" class="headerlink" title="用户数据写多读少"></a>用户数据写多读少</h3><p>用户数据的查询入口，在微信钱包中隐藏的很深。这决定了用户数据的访问量不会太大。</p>
+<p>只需要在发红包&amp;拆红包时，从订单记录中拆分出用户数据写入请求，发送到消息队列，异步写入到深圳即可。查询的时候统一从深圳去查。</p>
+<p>消息队列可能存在各种异常情况(消息丢失、处理失败)，需要定时对账保证订单和用户数据的最终一致性。</p>
+<h3 id="南北流量灵活调控"><a href="#南北流量灵活调控" class="headerlink" title="南北流量灵活调控"></a>南北流量灵活调控</h3><p>红包系统南北分布后，订单落地到深圳还是上海，是可以灵活分配的，只需要在接入层上做逻辑。</p>
+<p>可以在接入层中，实现让所有红包请求，都落地到深圳（无论用户从上海接入，还是深圳接入），这样上海的红包业务系统将不会有请求量。提升了红包系统的容灾能力。</p>
+<p>ps:这个地方有个问题，拆红包的时候，接入请求的服务端怎么知道这个红包是属于深圳还是上海。最简单的方式是查一下本地数据库有无这个红包，没有就把请求调用到另外一个城市。这种方式其实不太好，会调用两次查询，而且第一次查询请求可能会穿透到DB。</p>
+<h3 id="预订单"><a href="#预订单" class="headerlink" title="预订单"></a>预订单</h3><p>支付前订单落cache，同时利用cache的原子incr操作顺序生成红包订单号。部分用户请求发红包后，并不会真正去付款，减少DB中的废单记录。</p>
+<p><code>这个地方强依赖了cache，cache如果请求失败、甚至挂了怎么办？</code></p>
+<h3 id="拆红包入账异步化"><a href="#拆红包入账异步化" class="headerlink" title="拆红包入账异步化"></a>拆红包入账异步化</h3><p>信息流与资金流分离。拆红包时，DB中记下拆红包凭证，然后异步队列请求入账。入账失败通过补偿队列补偿，最终通过红包凭证与用户账户入账流水对账，保证最终一致性。</p>
+<p>理论基础是快慢分离。红包的入账是一个分布事务，属于慢接口。而拆红包凭证落地则速度快。实际应用场景中，用户抢完红包，只关心详情列表中谁是“最佳手气”，很少关心抢到的零是否已经到账。因为只需要展示用户的拆红包凭证即可。</p>
+<h3 id="发拆落地，其他操作双重缓存"><a href="#发拆落地，其他操作双重缓存" class="headerlink" title="发拆落地，其他操作双重缓存"></a>发拆落地，其他操作双重缓存</h3><p>所有查询先落到redis(腾讯内部叫ckv)，如果没有则请求到dao机器的本地缓存。(dao单机本地的内存有限，能否支持那么多数据？)</p>
+<p>DB本身不做读写分离。</p>
+<p><code>DB读写分离会有主从同步延迟的问题。</code></p>
+<h3 id="DB写同步cache，容忍少量不一致"><a href="#DB写同步cache，容忍少量不一致" class="headerlink" title="DB写同步cache，容忍少量不一致"></a>DB写同步cache，容忍少量不一致</h3><p>DB写操作完成后，dao中同步内存cache，业务服务层同步ckv，失败由异步队列补偿，定时的ckv与DB备机对账，保证最终数据一致。</p>
+<h3 id="处理高并发"><a href="#处理高并发" class="headerlink" title="处理高并发"></a>处理高并发</h3><p>微信红包的并发挑战，主要在于微信大群，多人同时抢同一个红包。</p>
+<p>终于聊到抢红包最核心的问题了，高并发如何解决。</p>
+<p>1.服务rpc调用时，使用红包订单号的hash值为key寻找下一跳地址。对同一个红包的所有拆请求、查询请求，都路由到同一台逻辑机器(servcie层)、同一台DB中处理。这也就解决了之前的dao单机内存容量有限的问题。</p>
+<p>2.Dao搭建本机Memcache内存cache，控制同一红包并发个数。</p>
+<p>在DB的接入机dao中，搭建本机内存cache。以红包订单号为key，对同一个红包的拆请求做原子计数，控制同一时刻能进DB中拆红包的并发请求数。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">比如说有个红包允许10个人领取，有100个人请求拆红包，对这100个人用本地Memcache缓存的incr标上1到100的序号并放入本地队列。本地有一个AtomicInteger代表已拆红包的数量，一个AtomicInteger代表正在处理的红包请求。并发的从本地队列中获取请求做处理，处理成功则增加已拆红包的数量，失败(比如风控)并且(已拆红包数量+正在处理的用户)没超过红包总数限制则继续请求本地队列。</span><br></pre></td></tr></table></figure>
+<p>这个策略的实施，依赖于请求路由按红包订单hash值走，确保同一红包的所有请求路由到同一逻辑层机器。</p>
+<p>3.多层级并发量控制<br>(1)发红包控制<br>发红包是业务流程的入口，控制了这里的并发量，代表着控制了红包业务整体的并发量。在发红包的业务链路里，做了多层的流量控制，确保产生的有效红包量级在可控范围。</p>
+<p>也就是说对于可以发的红包，有一个整体的数量控制。当发的红包数量超过系统能能承载的并发量时，可以主动做限流降级防止系统因为并发量超过水位限制而崩溃。</p>
+<p>(2)抢红包控制<br>微信红包领取时分为两个步骤，抢和拆。抢红包这个动作本身就有控制拆并发的作用。因为抢红包时，只需要查cache中的数据，不需要请求DB。对于红包已经领完、用户已经领过、红包已经过期等流量可以直接拦截。而对于有资格进入拆红包的请求量，也做流量控制。通过这些处理，最后可进入拆环节的流量大大减少，并且都是有效请求。</p>
+<p>(3)拆时内存cache控制<br>在DB的接入机dao中，搭建本机内存cache。上文已经说过了。</p>
+<p>4.DB简化和拆分</p>
+<p>(1)订单表只存关键字段，其他字段只在cache中存储，可柔性。除了订单关键信息（用户、单号、金额、时间、状态）外，其他字段全部从实时接口获取然后存缓存。</p>
+<p><code>这个地方柔性的概念是指的啥？</code></p>
+<p>(2) DB双重纬度分库表，冷热分离<br>使用订单hash、订单日期，两个纬度分库表。</p>
+<p>订单hash纬度，是为了将订单打散到不同的DB服务器中，均衡压力。主要应对的是拆红包的情况。</p>
+<p>订单日期循环日纬度，是为了避免单表数据无限扩张，使每天都是一张空表。主要应对的是数据读取的情况。红包的订单访问热度，是非常典型的冷热型。热数据集中在一两天内，且随时间急剧消减。线上热数据库只需要存几天的数据，其他数据可以定时移到成本低的冷数据库中。循环日表也使得历史数据的迁移变得方便。</p>
+<h3 id="红包算法"><a href="#红包算法" class="headerlink" title="红包算法"></a>红包算法</h3><p>这个可能是每个抢红包er都关心的事情:)</p>
+<p>首先，如果红包只有一个，本轮直接使用全部金额，确保红包发完。</p>
+<p>然后，计算出本轮红包最少要领取多少，才能保证红包领完，即本轮下水位；本轮最多领取多少，才能保证每个人都领到，即本轮上水位。主要方式如下：</p>
+<p>计算本轮红包金额下水位：假设本轮领到最小值1分，那接下来每次都领到200元红包能领完，那下水位为1分；如果不能领完，那按接下来每次都领200元，剩下的本轮应全部领走，是本轮的下水位。</p>
+<p>计算本轮红包上水位：假设本轮领200元，剩下的钱还足够接下来每轮领1分钱，那本轮上水位为200元；如果已经不够领，那按接下来每轮领1分，计算本轮的上水位。</p>
+<p>为了使红包金额不要太悬殊，使用红包均值调整上水位。如果上水位金额大于两倍红包均值，那么使用两倍红包均值作为上水位。换句话说，每一轮抢到的红包金额，最高为两倍剩下红包的均值。</p>
+<p>最后，获取随机数并用上水位取余，如果结果比下水位还小，则直接使用下水位，否则使用随机金额为本轮拆到金额。</p>
+<h3 id="稳定性保障"><a href="#稳定性保障" class="headerlink" title="稳定性保障"></a>稳定性保障</h3><p>1.下单cache故障降级DB</p>
+<p>下单cache有两个作用，生成红包订单与订单缓存。缓存故障情况下，降级为直接落地DB，并使用id生成器独立生成订单号。</p>
+<p><code>这个地方id生成器应该用的不是数字类型的，否则如何保证id生成器的订单号跟缓存的incr值不冲突?</code></p>
+<p>2.抢时cache故障降级DB<br>抢红包时，查询cache，拦截红包已经抢完、用户已经抢过、红包已经过期等无效请求。当cache故障时，降级DB查询，同时打开DB限流保护开关，防止DB压力过大导致服务不可用。</p>
+<p><code>正常操作</code></p>
+<p>3.拆时资金入账多级柔性<br>拆红包时，DB记录拆红包单据，然后执行资金转账。单据需要实时落地，而资金转账，这里做了多个层级的柔性降级方案：</p>
+<p>大额红包实时转账，小额红包入队列异步转账 所有红包进队列异步转账实时流程不执行转账，事后凭单据批量入账。</p>
+<p>总之，单据落地后，真实入账可实时、可异步，最终保证一致即可。</p>
+<p><code>支付接口rt都是比较高的，且有可能转账失败。所以需要做异步和重试，减少用户请求的rt并保证数据最终一致性。大额红包实时转账的逻辑主要是考虑到用户的对大额转账的关注度较高，用户体验上的考虑。</code></p>
+<p>4.用户列表降级<br>用户列表数据在微信红包系统中，属于非关键路径信息，属于可被降级部分。</p>
+<p>首先，写入时通过MQ异步写，通过定时对账保证一致性。<code>前面提到过了</code></p>
+<p>其次，cache中只缓存两屏，用户查询超过两屏则查用户列表DB。在系统压力大的情况下，可以限制用户只查两屏。<code>优化缓存的使用&amp;DB限流。</code></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>这个红包系统大部分都属于正常操作，最有意思的两点：</p>
+<p>1.异地架构</p>
+<ul>
+<li>系统做到异地双活，稳定性有一定提升。</li>
+<li>就近接入&amp;跨城专线，用户网络时延明显变低</li>
+</ul>
+<p>2.通过订单id的hash值，把同一个红包的所有请求转移到同一台逻辑机器&amp;同一台DB机器</p>
+<ul>
+<li>同一个红包的并发能力提升明显</li>
+<li>简化并发控制需要做的事情，无需引入分布式锁</li>
+<li>利用好DB机器的本地内存，实现双重缓存</li>
+</ul>
 
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2018/02/08/Hystrix入门/" title="Hystrix入门" itemprop="url">
-  
-    <h1 itemprop="name">Hystrix入门</h1>
-    
-     
-           <p itemprop="description" >Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。
-在一个分布式系统里，许多</p>
         
-    
-    <time datetime="2018-02-08T09:19:00.000Z" itemprop="datePublished">2018-02-08</time>
-  </a>
-</section>
-
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/12/25/分布式事务/" title="分布式事务" itemprop="url">
-  
-    <h1 itemprop="name">分布式事务</h1>
-    
-     
-           <p itemprop="description" >分布式事务是什么？分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。
-来看一个分布式事务的规范-XA，XA定义的三个组件：
-
-应用程序(</p>
         
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/红包系统/">红包系统</a><a href="/tags/异地双活/">异地双活</a><a href="/tags/请求转发/">请求转发</a><a href="/tags/架构/">架构</a><a href="/tags/稳定性/">稳定性</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
     
-    <time datetime="2017-12-24T16:46:37.000Z" itemprop="datePublished">2017-12-25</time>
-  </a>
-</section>
-
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/12/24/MySQL为例如何实现数据迁移/" title="MySQL为例如何实现数据迁移" itemprop="url">
-  
-    <h1 itemprop="name">MySQL为例如何实现数据迁移</h1>
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
     
-     
-           <p itemprop="description" >为什么要做数据迁移？很多场景会导致我们需要修改表结构，当alter不支持修改或者说alter导致的锁表代价太大的时候，我们就需要做数据迁移来解决。
-典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到</p>
+      <a href="/2018/02/08/Hystrix入门/" title="Hystrix入门" itemprop="url">Hystrix入门</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2018-02-08T09:19:00.000Z" itemprop="datePublished"> Published 2018-02-08</time>
+    
+  </p>
+</header>
+    <div class="article-content">
         
-    
-    <time datetime="2017-12-23T21:35:40.000Z" itemprop="datePublished">2017-12-24</time>
-  </a>
-</section>
+        <h3 id="Hystrix是什么"><a href="#Hystrix是什么" class="headerlink" title="Hystrix是什么?"></a>Hystrix是什么?</h3><p>hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。</p>
+<p>在一个分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等，如何能够保证在一个依赖出问题的情况下，不会导致整体服务失败，这个就是Hystrix需要做的事情。Hystrix提供了熔断、隔离、Fallback、cache、监控等功能，能够在一个、或多个依赖同时出现问题时保证系统依然可用。</p>
+<h3 id="用一个例子快速进入Hystrix"><a href="#用一个例子快速进入Hystrix" class="headerlink" title="用一个例子快速进入Hystrix"></a>用一个例子快速进入Hystrix</h3><p>Hystrix的核心功能，就是在调用远程服务时的熔断机制。下面用一个简单的例子来说明Hystrix的核心功能。</p>
+<p>1.例子基于spring-boot，所以首先新建一个空的spring-boot项目。建项目的过程此处略过。</p>
+<p>2.添加maven依赖:<br><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.netflix.hystrix<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hystrix-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.netflix.hystrix<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hystrix-metrics-event-stream<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.netflix.hystrix<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hystrix-javanica<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<p>3.新建configuration类<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.mogujie.marketing.hystrixTest.configuration;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.contrib.javanica.aop.aspectj.HystrixCommandAspect;</span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.web.servlet.ServletRegistrationBean;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Bean;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HystrixConfiguration</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> HystrixCommandAspect <span class="title">hystrixAspect</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> HystrixCommandAspect();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ServletRegistrationBean <span class="title">hystrixMetricsStreamServlet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        ServletRegistrationBean registration = <span class="keyword">new</span> ServletRegistrationBean(<span class="keyword">new</span> HystrixMetricsStreamServlet());</span><br><span class="line">        registration.addUrlMappings(<span class="string">"/hystrix.stream"</span>);</span><br><span class="line">        <span class="keyword">return</span> registration;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>4.新建RemoteService，代表依赖的远程服务。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">package com.mogujie.marketing.hystrixTest.service;</span><br><span class="line"></span><br><span class="line">import org.springframework.stereotype.Service;</span><br><span class="line"></span><br><span class="line">@Service(&quot;remoteService&quot;)</span><br><span class="line">public class RemoteService &#123;</span><br><span class="line"></span><br><span class="line">    public Object getUser() &#123;</span><br><span class="line">        Thread.sleep(2500);</span><br><span class="line">        return &quot;user&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>5.新建UserController，调用远程服务。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.mogujie.marketing.hystrixTest.controller;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.mogujie.marketing.hystrixTest.service.RemoteService;</span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;</span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;</span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.Autowired;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RequestMapping;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RestController;</span><br><span class="line"></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="meta">@RequestMapping</span>(&#123;<span class="string">"/test"</span>&#125;)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UserController</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> RemoteService remoteService;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping</span>(value = <span class="string">"/user"</span>)</span><br><span class="line">    <span class="meta">@HystrixCommand</span>(fallbackMethod = <span class="string">"fallback"</span>, threadPoolProperties = &#123;</span><br><span class="line">            <span class="meta">@HystrixProperty</span>(name = <span class="string">"coreSize"</span>, value = <span class="string">"30"</span>), <span class="meta">@HystrixProperty</span>(name = <span class="string">"maxQueueSize"</span>, value = <span class="string">"100"</span>),</span><br><span class="line">            <span class="meta">@HystrixProperty</span>(name = <span class="string">"queueSizeRejectionThreshold"</span>, value = <span class="string">"20"</span>)&#125;, commandProperties = &#123;</span><br><span class="line">            <span class="meta">@HystrixProperty</span>(name = <span class="string">"execution.isolation.thread.timeoutInMilliseconds"</span>, value = <span class="string">"3000"</span>),</span><br><span class="line">            <span class="meta">@HystrixProperty</span>(name = <span class="string">"circuitBreaker.requestVolumeThreshold"</span>, value = <span class="string">"1"</span>)</span><br><span class="line"></span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">getUser</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Object user = remoteService.getUser();</span><br><span class="line">        <span class="keyword">return</span> user;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">fallback</span><span class="params">(Throwable e)</span> </span>&#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"test"</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>6.浏览器调用<code>http://127.0.0.1/test/user</code>可以看到正常返回的结果。调整Thread.sleep的时间为3000，可以看到fallback函数返回的结果。</p>
+<p>从上面的例子可以快速体会到Hystrix给远程服务调用带来的好处，只需要简单的配置一个注解，就能给远程服务加上超时时间&amp;错误回调。</p>
+<p>Hystrix可以支持RPC、DB、HTTP等远程服务的超时&amp;错误回调，甚至可以做本地服务的超时&amp;错误回调。刚刚的例子就是模拟本地服务执行超时的情况。</p>
+<p>一般来说，RPC框架都有基本的超时机制，但是错误处理和功能降级往往要自己来实现，Hystrix帮我省略了这部分冗余的代码，只需要写一个回调函数，简单配置一下就完工了。</p>
+<h3 id="Hystrix的配置项"><a href="#Hystrix的配置项" class="headerlink" title="Hystrix的配置项"></a>Hystrix的配置项</h3><p>那Hystrix有哪些配置项？那些配置项又支持哪些功能？这些功能又在什么情况下被用到呢？解决这些问题是Hystrix进阶的关键。</p>
+<h4 id="Hystrix有哪些配置项"><a href="#Hystrix有哪些配置项" class="headerlink" title="Hystrix有哪些配置项?"></a>Hystrix有哪些配置项?</h4><p>官方配置项地址:<a href="https://github.com/Netflix/Hystrix/wiki/Configuration" target="_blank" rel="noopener">配置项详解</a>.</p>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#CommandExecution" target="_blank" rel="noopener">Execution 执行</a></p>
+<ul>
+<li>execution.isolation.strategy:设置方法执行的隔离策略。可选线程池或者信号量。具体分析参考这篇文章<a href="http://blog.csdn.net/liuchuanhong1/article/details/73718794" target="_blank" rel="noopener">Hystrix系列-5-Hystrix的资源隔离策略</a>。</li>
+<li>execution.isolation.thread.timeoutInMilliseconds：设置调用者等待命令执行的超时限制，超过此时间，HystrixCommand被标记为TIMEOUT，并执行回退逻辑。</li>
+<li>execution.timeout.enabled：执行是否有超时限制。</li>
+<li>execution.isolation.thread.interruptOnTimeout：当超时的时候是否中断</li>
+<li>execution.isolation.thread.interruptOnCancel：当发生cancel事件后是否中断</li>
+<li>execution.isolation.semaphore.maxConcurrentRequests：当使用信号量隔离的时候，此配置有效。官方给出5000请求只需要2个。</li>
+</ul>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#CommandFallback" target="_blank" rel="noopener">Fallback 降级</a></p>
+<ul>
+<li>fallback.isolation.semaphore.maxConcurrentRequests：最大并发数，超过此并发则拒绝请求。</li>
+<li>fallback.enabled：是否打开降级</li>
+</ul>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#CommandCircuitBreaker" target="_blank" rel="noopener">Circuit Breaker 熔断器</a></p>
+<ul>
+<li>circuitBreaker.enabled：是否打开熔断器。</li>
+<li>circuitBreaker.requestVolumeThreshold：时间窗口内最小请求数，当小于这个请求数，即使全部失败也不会熔断。</li>
+<li>circuitBreaker.sleepWindowInMilliseconds：熔断后，请求retry的时间间隔</li>
+<li>circuitBreaker.errorThresholdPercentage：失败率阈值，超过这个失败率就会熔断</li>
+<li>circuitBreaker.forceOpen：是否强制开启熔断，这样会导致拒绝所有请求</li>
+<li>circuitBreaker.forceClosed：是否强制关闭熔断，这样任何原因都无法触发熔断。注：优先级小于强制开启。</li>
+</ul>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#CommandMetrics" target="_blank" rel="noopener">Metrics 度量</a></p>
+<ul>
+<li>metrics.rollingStats.timeInMilliseconds:设置统计滚动窗口的长度，以毫秒为单位。用于监控和熔断器。<br>滚动窗口被分隔成桶(bucket)。并进行滚动。 例如这个属性设置10000ms，一个桶就是1s。</li>
+<li>metrics.rollingStats.numBuckets ：统计窗口的桶数量。</li>
+<li>metrics.rollingPercentile.enabled：执行时间是否被跟踪，并且计算各个百分比，50%,90%等的时间。</li>
+<li>metrics.rollingPercentile.timeInMilliseconds：设置执行时间在滚动窗口中保留时间，用来计算百分比。</li>
+<li>metrics.rollingPercentile.numBuckets：设置rollingPercentile窗口的桶数量。</li>
+<li>metrics.rollingPercentile.bucketSize    ：设置每个桶保存的执行时间的最大值。</li>
+<li>metrics.healthSnapshot.intervalInMilliseconds：采样时间间隔。</li>
+</ul>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#CommandRequestContext" target="_blank" rel="noopener">Request Context 请求上下文</a></p>
+<ul>
+<li>requestCache.enabled：设置是否缓存请求，request-scope内缓存。hystrix支持将一个请求结果缓存起来，下一个具有相同key的请求将直接从缓存中取出结果，减少请求开销。要使用该功能必须管理HystrixRequestContext，如果请求B要用到请求A的结果缓存，A和B必须同处一个context。</li>
+<li>requestLog.enabled：设置HystrixCommand执行和事件是否打印到HystrixRequestLog中    。</li>
+</ul>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#Collapser" target="_blank" rel="noopener">Collapser Properties 压缩器属性</a></p>
+<ul>
+<li>maxRequestsInBatch：请求合并的最大请求数</li>
+<li>timerDelayInMilliseconds：请求合并的时间窗口，也就是出现第一个请求后，在该时间间隔内的请求合并，超过则进入下一个时间窗口</li>
+<li>requestCache.enabled：请求合并是否打开请求缓存</li>
+</ul>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration#ThreadPool" target="_blank" rel="noopener">Thread Pool Properties 线程池参数</a></p>
+<ul>
+<li>coreSize：线程池的大小</li>
+<li>maximumSize：线程池的最大大小，只会在设置了allowMaximumSizeToDivergeFromCoreSize的情况下生效，一般情况下和线程池大小相同。</li>
+<li>maxQueueSize：<code>-1</code>代表使用<a href="http://docs.oracle.com/javase/6/docs/api/java/util/concurrent/SynchronousQueue.html" target="_blank" rel="noopener">SynchronousQueue</a>，其它值代表<a href="http://docs.oracle.com/javase/6/docs/api/java/util/concurrent/LinkedBlockingQueue.html" target="_blank" rel="noopener">LinkedBlockingQueue</a>.这两个队列用于ThreadPoolExecutor</li>
+<li>queueSizeRejectionThreshold：队列拒绝服务的阈值</li>
+<li>keepAliveTimeMinutes：如果线程池的最大值大于线程池的大小，那么这个配置用于回收多久没被使用的线程。</li>
+<li>allowMaximumSizeToDivergeFromCoreSize：线程池的最大值是否可以和线程池的值不一样</li>
+<li>metrics.rollingStats.timeInMilliseconds：设置统计滚动窗口的长度，以毫秒为单位。用于监控和熔断器。滚动窗口被分隔成桶(bucket)。并进行滚动。 例如这个属性设置10000ms，一个桶就是1s。</li>
+<li>metrics.rollingStats.numBuckets：统计窗口的桶数量</li>
+</ul>
+<h4 id="Hystrix配置解析"><a href="#Hystrix配置解析" class="headerlink" title="Hystrix配置解析"></a>Hystrix配置解析</h4><ul>
+<li>Execution分组下的配置项，指定了方法执行的隔离策略、超时限制等属性。</li>
+<li>Fallback分组下的配置项，指定了最大并发限制，超过并发限制则走降级方法。</li>
+<li>Circuit Breaker分组下的配置项，指定了熔断器的最小请求数、熔断之后的重试间隔、造成熔断的请求失败率。</li>
+<li>Metrics分组下的配置项，主要是统计相关的参数，指定了滚动窗口的时间长度、桶数量、方法执行时间的保留时间等。这块配置会比较难理解。</li>
+<li>Request Context分组下的配置项，指定了是否缓存请求结果、是否记录日志。</li>
+<li>Collapser Properties分组下的配置项，用来支持请求合并功能。当单个请求耗时很大的时候，可以使用请求合并的方式调用批量接口。设置最大请求数，合并请求的等待时间，配置请求结果是否需要缓存。单个请求耗时很低的时候，不建议使用，反而会降低平均请求时延。需要通过评估和计算得出哪种方案更合适。</li>
+<li>Thread Pool Properties分组下的配置项目，指定了方法执行的线程池的初始化参数。</li>
+</ul>
+<h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><p>Hystrix实现了熔断机制、请求超时、限流降级、结果缓存、请求合并、统计、线程池隔离等功能共同保障应用的稳定性。</p>
+<p>先来看看官方的流程图：<br><img src="http://upload-images.jianshu.io/upload_images/648342-73e60e03d8ff5e7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Flow  Chart"></p>
+<p>分为以下步骤：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1.初始化HystrixCommand</span><br><span class="line">2.执行Command</span><br><span class="line">3.是否需要走缓存获取结果？</span><br><span class="line">4.是否已经开启了熔断？</span><br><span class="line">5.信号量/线程池拒绝请求？</span><br><span class="line">6.实际执行方法</span><br><span class="line">7.上报结果判断是否开启熔断</span><br><span class="line">8.执行失败走降级方法</span><br><span class="line">9.执行成功结果返回</span><br></pre></td></tr></table></figure></p>
+<p>处理执行成功结果时使用了RxJava(观察者模式)来传递事件，流程如下图所示：<br><img src="http://upload-images.jianshu.io/upload_images/648342-d00fb3e56f972794.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="执行结果返回"></p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p><a href="https://www.jianshu.com/p/9641cd888b9a" target="_blank" rel="noopener">1.在项目中快速加入Netflix Hystrix特性</a><br><a href="http://www.cnblogs.com/gaoyanqing/p/7470085.html" target="_blank" rel="noopener">2.Hystrix入门指南</a><br><a href="https://www.jianshu.com/p/39763a0bd9b8" target="_blank" rel="noopener">3.Hystrix配置简单说明（官方文档简译）</a><br><a href="http://www.cnblogs.com/ulysses-you/p/7281662.html" target="_blank" rel="noopener">4.微服务（二）hystrix</a><br><a href="http://blog.csdn.net/liuchuanhong1/article/details/73718794" target="_blank" rel="noopener">5.Hystrix系列-5-Hystrix的资源隔离策略</a><br><a href="http://blog.csdn.net/xiao_jun_0820/article/details/78423985" target="_blank" rel="noopener">6.通过HystrixCollapser合并请求提高应用吞吐量</a><br><a href="https://github.com/Netflix/Hystrix/wiki/How-it-Works" target="_blank" rel="noopener">7.How it Works</a></p>
 
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/12/08/Spring中使用Quartz来做单机任务调度/" title="Spring中使用Quartz来做单机任务调度" itemprop="url">
-  
-    <h1 itemprop="name">Spring中使用Quartz来做单机任务调度</h1>
-    
-     
-           <p itemprop="description" >背景开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。
-但是，分布式任务</p>
         
-    
-    <time datetime="2017-12-08T00:41:38.000Z" itemprop="datePublished">2017-12-08</time>
-  </a>
-</section>
-
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/12/04/负载测试学习笔记/" title="负载测试学习笔记" itemprop="url">
-  
-    <h1 itemprop="name">负载测试学习笔记</h1>
-    
-     
-           <p itemprop="description" >当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式：
-1load average: 0.09, 0.05, 0.01
-三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟）</p>
         
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java/">Java</a><a href="/tags/Hystrix/">Hystrix</a><a href="/tags/熔断/">熔断</a><a href="/tags/请求超时/">请求超时</a><a href="/tags/限流降级/">限流降级</a><a href="/tags/结果缓存/">结果缓存</a><a href="/tags/请求合并/">请求合并</a><a href="/tags/统计/">统计</a><a href="/tags/线程池隔离/">线程池隔离</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
     
-    <time datetime="2017-12-04T15:24:14.000Z" itemprop="datePublished">2017-12-04</time>
-  </a>
-</section>
-
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/12/04/JVM内存模型详解/" title="JVM内存模型详解" itemprop="url">
-  
-    <h1 itemprop="name">JVM内存模型详解</h1>
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
     
-     
-           <p itemprop="description" >1.基本概念JVM实际上是运行在一个具体操作系统上的程序进程，对Java代码而言，JVM就是操作系统的代理。
-
-如图所示是JVM的内存模型及数据交互。JVM的内存模型依然是基于操作系统进程空间的，不过是自己设计了一套内存管理体系以支撑上层的Java代码。
-JVM的运行时内存可以简</p>
+      <a href="/2017/12/25/分布式事务/" title="分布式事务" itemprop="url">分布式事务</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-24T16:46:37.000Z" itemprop="datePublished"> Published 2017-12-25</time>
+    
+  </p>
+</header>
+    <div class="article-content">
         
-    
-    <time datetime="2017-12-04T10:11:31.000Z" itemprop="datePublished">2017-12-04</time>
-  </a>
-</section>
+        <h3 id="分布式事务是什么？"><a href="#分布式事务是什么？" class="headerlink" title="分布式事务是什么？"></a>分布式事务是什么？</h3><p>分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。</p>
+<p>来看一个分布式事务的规范-XA，XA定义的三个组件：</p>
+<ul>
+<li>应用程序(AP)，它定义了事务的边界，并且定义了构成该事务的应用程序的特定操作。</li>
+<li>资源管理器(RM)，可以理解为一个DBMS系统，或者消息服务器管理系统。应用程序通过RM对资源进行控制，资源必须实现XA定义的接口。RM提供了存储共享资源的支持。</li>
+<li>事务管理器(TM)，负责协调和管理事务，提供给AP编程接口并管理资源管理器。事务管理器监控事务的进程，负责处理事务的完成和失败。</li>
+</ul>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-97cdf72d735ea81a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="AP/TM/RM之间的关系"></p>
+<p>事务管理器是额外引入的，之所以要引入事务管理器，是因为分布式系统中，两台机器理论上无法达到一致的状态，需要引入一个单点进行协调。</p>
+<h3 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h3><p>两阶段提交协议，即2PC。分布式系统中，在提交之前增加了准备的阶段，所以称为两阶段提交。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-beea02a94d7be619.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="第一阶段"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-a4d7ff8012b38dd4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="第二阶段"></p>
+<p>特别地，在准备阶段有一个资源失败，那么第二阶段处理的就是回滚所有资源。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-e903078e7a9fbef9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="出问题的第一阶段"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-8c5a97747d8f6cc9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="回滚的第二阶段"></p>
+<p>将提交分成两阶段进行的目的很明确，就是尽可能晚地提交事务，让事务在提交前尽可能地完成所有能完成的工作，这样，最后的提交阶段将是一个耗时极短的微小操作，这种操作在一个分布式系统中失败的概率是非常小的，也就是所谓的“网络通讯危险期”非常的短暂，这是两阶段提交确保分布式事务原子性的关键所在。（唯一理论上两阶段提交出现问题的情况是当协调者发出提交指令后当机并出现磁盘故障等永久性错误，导致事务不可追踪和恢复）</p>
+<p>从两阶段提交的工作方式来看，很显然，在提交事务的过程中需要在多个节点之间进行协调，而各节点对锁资源的释放必须等到事务最终提交时，这样，比起一阶段提交，两阶段提交在执行同样的事务时会消耗更多时间。事务执行时间的延长意味着锁资源发生冲突的概率增加，当事务的并发量达到一定数量的时候，就会出现大量事务积压甚至出现死锁，系统性能就会严重下滑。这就是使用XA事务。</p>
+<h3 id="一阶段提交"><a href="#一阶段提交" class="headerlink" title="一阶段提交"></a>一阶段提交</h3><p>不像两阶段提交那样复杂，一阶段提交非常直白，就是从应用程序向数据库发出提交请求到数据库完成提交或回滚之后将结果返回给应用程序的过程。一阶段提交不需要“协调者”角色，各结点之间不存在协调操作，因此其事务执行时间比两阶段提交要短，但是提交的“危险期”是每一个事务的实际提交时间，相比于两阶段提交，一阶段提交出现在“不一致”的概率就变大了。但是我们必须注意到：只有当基础设施出现问题的时候(如网络中断，当机等)，一阶段提交才可能会出现“不一致”的情况，相比它的性能优势，很多团队都会选择这一方案。关于在spring环境下如何实现一阶段提交,有一篇非常优秀的文章值得参考：<a href="http://www.javaworld.com/javaworld/jw-01-2009/jw-01-spring-transactions.html?page=5" target="_blank" rel="noopener">http://www.javaworld.com/javaworld/jw-01-2009/jw-01-spring-transactions.html?page=5</a></p>
+<p>像一阶段提交这种模式，前提是应用程序能获取所有的数据源，然后使用同一个事务管理器(这里指是的spring的事务管理器)管理事务。这种模式最典型的应用场景非数据库sharding莫属。但是对于那些基于web service/rpc/jms等构建的高度自治(autonomy)的分布式系统接口，一阶段提交模式是无能为力的，此类场景下，还有最后一种方法可以帮助我们实现“最终一致性”，那就是事务补偿机制。</p>
+<p>一般而言，需要交互的子系统数量较少，并且整个系统在未来不会或很少引入新的子系统且负载长期保持稳定，即无伸缩要求的话，考虑到开发复杂度和工作量，可以选择使用分布式事务。对于时间需求不是很紧，对性能要求很高的系统，应考虑使用一阶段提交或事务补偿机制。对于那些需要进行sharding改造的系统，基本上不应再考虑分布式事务，因为sharding打开了数据库水平伸缩的窗口，使用分布式事务看起来好像是为新打开的窗口又加上了一把枷锁。</p>
+<h3 id="大型网站一致性理的基础理论-CAP-BASE"><a href="#大型网站一致性理的基础理论-CAP-BASE" class="headerlink" title="大型网站一致性理的基础理论-CAP/BASE"></a>大型网站一致性理的基础理论-CAP/BASE</h3><p>我们来了解一下分布式系统的基础理论-CAP。</p>
+<p>CAP理论：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">一致性（C）：所有的节点在同一时间读到同样的数据。当数据写入成功后，所有的节点会同事看到这个新的数据。</span><br><span class="line"></span><br><span class="line">可用性（A）：保证无论是成功还是失败，每个请求都能够收到一个反馈。这就是数据的可用性，重点是系统一定要有响应。</span><br><span class="line"></span><br><span class="line">分区容忍性（P）：即便系统中有部分问题或者消息的丢失，但是系统仍能够继续运行。</span><br></pre></td></tr></table></figure></p>
+<p>但是，分布式系统不能同时满足上面三项，一般来说，很多分布式系统在设计时的选择，是放弃一定的一致性，选择AP。</p>
+<p>再来看看BASE：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">基本可用：允许分区失败</span><br><span class="line">软状态：接受一段时间的状态不同步</span><br><span class="line">最终一致：保证最终的数据的状态是一致的</span><br></pre></td></tr></table></figure>
+<p>所以当我们选择了AP，那么对于C，采用的策略就是保证最终是一致的。</p>
+<p>强一致：所有的节点在同一时间读到同样的数据。</p>
+<p>最终一致：牺牲一部分的一致性，可以接受数据存在不一致的问题，但是通过重试或其他手段，保证数据最终会达到一致状态</p>
+<h3 id="Paxos协议"><a href="#Paxos协议" class="headerlink" title="Paxos协议"></a>Paxos协议</h3><p>Paxos协议，是一个比两阶段提交要轻量的保证一致性的协议。</p>
+<p>分布式系统中，要面临和单机处理完全不一样的问题，例如网络问题、进程or机器挂掉、进程超时等。这就会造成消息重复，一段时间内不可达等现象。Paxos协议是帮助我们解决分布式系统中一致性大问题的一个方案。</p>
+<p>使用Paxos协议有一个前提，那就是不存在拜占庭将军问题。简单来说，就是要有一个可信的通信环境，所有信息都是准确的没有被篡改。</p>
+<p>Paxos协议的决议过程比较复杂，这里不赘述，有兴趣可以自行了解。总结Paxos的核心原则就是少数服从多数。</p>
+<p>但是Paxos协议存在一个问题，如果系统中同事有人提出议案，可能会出现碰撞导致失败。然后大家都是重试，重试仍然可能导致失败。这就会导致活锁。</p>
+<p>解决的办法是在整个集群中设一个Leader，所有的议案都由他来提，这样就可以避免冲突。而引发的新问题就是如果Leader出问题了该如何处理，那就需要再选一个Leader出来。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>从工程上来说，如果能够避免分布式事务的引入，那还是避免为好；如果一定要引入分布式事务，可以考虑最终一致性的方法；从实现上来说，就是通过补偿的机制不断重试，让之前因为异常而没有进行到底的操作重试或继续进行，而不是回滚。</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p>大型网站系统与JAVA中间件实践<br><a href="http://blog.csdn.net/bluishglc/article/details/7612811" target="_blank" rel="noopener"><a href="http://blog.csdn.net/bluishglc/article/details/7612811" target="_blank" rel="noopener">关于分布式事务、两阶段提交、一阶段提交和事务补偿机制的研究</a>
+</a></p>
 
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/11/23/Linux中的内存管理/" title="Linux中的内存管理" itemprop="url">
-  
-    <h1 itemprop="name">Linux中的内存管理</h1>
-    
-     
-           <p itemprop="description" >Linux的内存管理方式经常会在面试时作为操作系统基础被问道。搞清楚这个问题的好处很多，近的话可以应付面试，远的可以提高对于操作系统底层的认识，为程序的性能优化打下基础。
-我们对于计算机内存，最直观和简陋的概念就是机器的物理内存，程序都被放在物理内存上执行。物理内存一般都有限制，</p>
         
-    
-    <time datetime="2017-11-23T12:17:59.000Z" itemprop="datePublished">2017-11-23</time>
-  </a>
-</section>
-
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/11/22/Java代理模式及使用/" title="Java代理模式及使用" itemprop="url">
-  
-    <h1 itemprop="name">Java代理模式及使用</h1>
-    
-     
-           <p itemprop="description" >一、简单代理模式简单代理模式就是为一个实现类找一个代理人类，由这个代理人持有这个实现类并对外提供服务。
-假设我有一个RealSubject类，实现了Subject接口：123456public class RealSubject implements Subject&amp;#123; </p>
         
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java/">Java</a><a href="/tags/分布式事务/">分布式事务</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
     
-    <time datetime="2017-11-21T19:10:56.000Z" itemprop="datePublished">2017-11-22</time>
-  </a>
-</section>
-
-
-
-
-
-
-  
-<section class="post" itemscope itemprop="blogitem">
-  
-    <a href="/2017/11/20/hello-world/" title="Hello World" itemprop="url">
-  
-    <h1 itemprop="name">Hello World</h1>
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
     
-     
-           <p itemprop="description" >Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the </p>
+      <a href="/2017/12/24/MySQL为例如何实现数据迁移/" title="MySQL为例如何实现数据迁移" itemprop="url">MySQL为例如何实现数据迁移</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-23T21:35:40.000Z" itemprop="datePublished"> Published 2017-12-24</time>
+    
+  </p>
+</header>
+    <div class="article-content">
         
+        <h3 id="为什么要做数据迁移？"><a href="#为什么要做数据迁移？" class="headerlink" title="为什么要做数据迁移？"></a>为什么要做数据迁移？</h3><p>很多场景会导致我们需要修改表结构，当alter不支持修改或者说alter导致的锁表代价太大的时候，我们就需要做数据迁移来解决。</p>
+<p>典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到新的库和表当中。</p>
+<p>其次就是经过了一段时间之后，需求有很大变化的时候，需要扩充单表字段。单纯的alter对于有很多数据的单表并不友好，会导致单表被锁，线上写请求超时，这有时是不可容忍的。</p>
+<p>所以我们需要有数据迁移，数据迁移往往对应的是需求的变化、业务的增长。</p>
+<h3 id="怎么做数据迁移？"><a href="#怎么做数据迁移？" class="headerlink" title="怎么做数据迁移？"></a>怎么做数据迁移？</h3><p>想象一下我们如果要做数据迁移会有哪些步骤。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1.逐行读取线上表的数据</span><br><span class="line">2.根据业务需要，对每行数据做特殊处理</span><br><span class="line">3.数据逐行写入到新的表中</span><br><span class="line">4.线上切换到新的数据表</span><br></pre></td></tr></table></figure></p>
+<p>看起来很简单，但是这里有一个问题需要解决。</p>
+<h3 id="如何实现无缝迁移？"><a href="#如何实现无缝迁移？" class="headerlink" title="如何实现无缝迁移？"></a>如何实现无缝迁移？</h3><p>在读取线上表的过程中，有可能出现线上表数据被update的情况。此外，读取完成线上表之后，有可能出现线上insert数据的情况。最后结果就是同步数据过程中就会马上出现新表和旧表数据不一致的地方。这个时候就需要应用停机来保证新表和旧表数据一致。但是如果不能接受长时间的停机，那该怎么办呢？</p>
+<p>可以考虑的方案是，在开始进行数据迁移时，记录增量日志，在迁移完成后，再对增量日志做处理。在最后，可以把要被迁移的数据的写暂停(应用停机)，保证增量数据都处理完成后，再切换数据源，放开所有的写，完成迁移工作。</p>
+<p>下面是一些实现数据迁移的具体方案：</p>
+<h5 id="方案一-定点停机迁移"><a href="#方案一-定点停机迁移" class="headerlink" title="方案一 定点停机迁移"></a>方案一 定点停机迁移</h5><p>在一个月黑风高的夜晚，停掉应用，用事先写好的迁移程序，把mysql 数据库数据迁移到新结构的mysql数据库中。完成后，切换应用。最大的缺点就是随着数据量的增加停机时间会变得非常长。</p>
+<p>停机到底会有多长? 千万级的数据，也许一个晚上就能搞定(大部分游戏的停机维护时间)。上亿的数据，也许就需要几天了，拥有这么大数据量的业务，一般是无法忍受这种量级的停机维护的。</p>
+<h4 id="方案二-MySQL-Binlog方案"><a href="#方案二-MySQL-Binlog方案" class="headerlink" title="方案二 MySQL Binlog方案"></a>方案二 MySQL Binlog方案</h4><p>mysql的迁移可以考虑mysql的主从复制replication的特性，解析binlog日志，根据业务需要，对每行数据做特殊处理，把数据写入到新的数据库，运行迁移过程不需要停机。在数据迁移基本上完成的时候，停掉应用，等待迁移全部完成，切换应用到新库。停机时间非常短，只需要几乎1-2分钟或者更少。</p>
+<h4 id="方案四-触发器方案"><a href="#方案四-触发器方案" class="headerlink" title="方案四 触发器方案"></a>方案四 触发器方案</h4><p>备份老的MySQL数据表结构到新的MySQL数据库，在新库创建新的表结构，更改老的数据库表，创建触发器，让数据写入的时候同时写入到的新的MySQL表。dump老的MySQL的数据，导入到新的MySQL，这是新的MySQL表结构的表应该已经有相应的数据了。然后开启主从复制，让其达到跟主库数据一致。切换应用，迁移到的方案。停机时间非常短，只需要几乎1-2分钟或者更少。</p>
+<p>这种方案一般适用于小型公司，不太适用于大公司。因为在大一点的公司，数据库管理由专门的DBA负责，业务开发人员不会有权限去MySQL服务器上去写触发器。即使可以提交工单，让DBA来全权操作，但是明明可以业务自己处理的东西，干啥每次都要劳烦DBA呢是吧:)，人力成本也是成本。</p>
+<h4 id="方案四-中间件方案"><a href="#方案四-中间件方案" class="headerlink" title="方案四 中间件方案"></a>方案四 中间件方案</h4><p>这种方案必须要你的应用连接数据使用了类似中间层的方案，你只需要在中间层增加同时往新库写数据的代码就好了。</p>
+<p>参考文献:<br><a href="http://database.51cto.com/art/201105/261037.htm" target="_blank" rel="noopener">MySQL数据库的无缝迁移</a></p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/MySQL/">MySQL</a><a href="/tags/数据迁移/">数据迁移</a><a href="/tags/数据库中间件/">数据库中间件</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
     
-    <time datetime="2017-11-20T10:54:31.000Z" itemprop="datePublished">2017-11-20</time>
-  </a>
-</section>
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/12/08/Spring中使用Quartz来做单机任务调度/" title="Spring中使用Quartz来做单机任务调度" itemprop="url">Spring中使用Quartz来做单机任务调度</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-08T00:41:38.000Z" itemprop="datePublished"> Published 2017-12-08</time>
+    
+  </p>
+</header>
+    <div class="article-content">
+        
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。</p>
+<p>但是，分布式任务调度中间件往往是基于一个zookeeper集群来做任务调度的。如果zookeeper集群出了问题，任务调度就挂街了。</p>
+<p>这个时候其实可以直接基于quartz来做调度，这也是本文要说的事情。</p>
+<h3 id="QuartzTask"><a href="#QuartzTask" class="headerlink" title="QuartzTask"></a>QuartzTask</h3><p>首先定义一个任务接口，我们希望一个任务实现下面这些方法:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">QuartzTask</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 任务执行的代码</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">executeTask</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 指定执行任务的机器ip</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> String</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">String <span class="title">getTargetIP</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * crond表达式</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> String</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">String <span class="title">getCrond</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 任务唯一名称</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> String</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">String <span class="title">getJobName</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="EmptyTask"><a href="#EmptyTask" class="headerlink" title="EmptyTask"></a>EmptyTask</h3><p>为了解释清楚如何使用quartz来做单机任务调度，我们新建一个空白的任务EmptyTask并实现QuartzTask定义的方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span>(<span class="string">"emptyTask"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EmptyTask</span> <span class="keyword">implements</span> <span class="title">QuartzTask</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger logger = LoggerFactory.getLogger(EmptyTask.class);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">executeTask</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        logger.warn(<span class="string">"emptyTask running"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getTargetIP</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"127.0.0.1"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getCrond</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"0 0/1 * * * ?"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getJobName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"emptyTask"</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>targetIP即可以写死成一个字符串，也可以从配置服务、第三方接口，数据库等数据源动态的获取。</p>
+<p>crond表达式可以在 <a href="http://cron.qqe2.com/" target="_blank" rel="noopener">http://cron.qqe2.com/</a> 动态生成。</p>
+<h3 id="BeanPostProcessor"><a href="#BeanPostProcessor" class="headerlink" title="BeanPostProcessor"></a>BeanPostProcessor</h3><p>BeanPostProcessor是Spring中一个很实用的接口。BeanPostProcessor提供了两个方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BeanPostProcessor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function">Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">	<span class="function">Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException</span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>postProcessBeforeInitialization:Bean 实例化之前进行的处理<br>postProcessAfterInitialization: Bean 实例化之后进行的处理</p>
+<p>使用BeanPostProcessor也很简单，只要实现这个接口，并重载这两个方法就可以了。</p>
+<h3 id="SchedulerManager"><a href="#SchedulerManager" class="headerlink" title="SchedulerManager"></a>SchedulerManager</h3><p>利用BeanPostProcessor提供的特性，我们可以在所有bean初始化完成之后做一些事情。于是就有了SchedulerManager类:<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SchedulerManager</span> <span class="keyword">extends</span> <span class="title">SchedulerFactoryBean</span> <span class="keyword">implements</span> <span class="title">BeanPostProcessor</span>, <span class="title">InitializingBean</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Scheduler scheduler;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">afterPropertiesSet</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.afterPropertiesSet();</span><br><span class="line">        <span class="keyword">this</span>.scheduler = <span class="keyword">this</span>.getScheduler();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">postProcessBeforeInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> bean;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">postProcessAfterInitialization</span><span class="params">(Object bean, String beanName)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (QuartzTask.class.isInstance(bean)) &#123;</span><br><span class="line">                QuartzTask quartzTask = QuartzTask.class.cast(bean);</span><br><span class="line"></span><br><span class="line">                CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(quartzTask.getCrond());</span><br><span class="line">                Trigger newTrigger = TriggerBuilder.newTrigger()</span><br><span class="line">                        .withIdentity(quartzTask.getJobName(), <span class="string">"DEFAULT"</span>).withSchedule(scheduleBuilder).build();</span><br><span class="line"></span><br><span class="line">                <span class="comment">//需要一个中间job类来处理，中间类会去实际执行任务</span></span><br><span class="line">                JobDetail jobDetail = JobBuilder.newJob(ScheduleTaskExecutor.class)</span><br><span class="line">                        .withIdentity(quartzTask.getJobName(), <span class="string">"DEFAULT"</span>).build();</span><br><span class="line">                jobDetail.getJobDataMap().put(<span class="string">"taskContext"</span>, quartzTask);</span><br><span class="line"></span><br><span class="line">                scheduler.scheduleJob(jobDetail, newTrigger);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            logger.error(<span class="string">"scheduleManager init error."</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> bean;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="ScheduleTaskExecutor"><a href="#ScheduleTaskExecutor" class="headerlink" title="ScheduleTaskExecutor"></a>ScheduleTaskExecutor</h3><p>由于JobDetail自己管理了任务执行类的生命周期，所以只能使用一个中间任务类ScheduleTaskExecutor，中转到要实际执行的任务。</p>
+<p><code>DisallowConcurrentExecution</code>注解能使得ScheduleTaskExecutor的同一个实例，不会并发执行execute方法。也就是说同一个JobDetail不会并发执行。但是如果是不同的JobDetail，是可以并发执行的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@DisallowConcurrentExecution</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ScheduleTaskExecutor</span> <span class="keyword">implements</span> <span class="title">Job</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(JobExecutionContext context)</span> <span class="keyword">throws</span> JobExecutionException </span>&#123;</span><br><span class="line">        QuartzTask quartzTask = (QuartzTask)context.getMergedJobDataMap().get(<span class="string">"taskContext"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!HttpUtil.getServerIp().equals(quartzTask.getTargetIP())) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        quartzTask.executeTask();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="存在的问题"><a href="#存在的问题" class="headerlink" title="存在的问题"></a>存在的问题</h3><p>上面的实现方式存在一个待优化的问题：线上应用往往是多机器分布式的，虽然指定了某个IP执行任务，但是其实每台机器都开启了一个定时任务去执行中间任务类的的方法，只不过在IP判断的时候提前结束了任务。</p>
+<p>更好的实现方式，是监控targetIP的变化，然后暂停or开启任务。</p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Spring/">Spring</a><a href="/tags/Quartz/">Quartz</a><a href="/tags/任务调度/">任务调度</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
+    
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/12/04/负载测试学习笔记/" title="负载测试学习笔记" itemprop="url">负载测试学习笔记</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-04T15:24:14.000Z" itemprop="datePublished"> Published 2017-12-04</time>
+    
+  </p>
+</header>
+    <div class="article-content">
+        
+        <p>当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个<code>load average</code>条目，也就是负载均值的意思。一般是这样的格式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load average: 0.09, 0.05, 0.01</span><br></pre></td></tr></table></figure>
+<p>三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），它们的数字当然是越小越好。数字越高，说明服务器的负载越大，这也可能是服务器出现某种问题的信号。</p>
+<p>怎么会有三个数字的确让人困扰。我们知道，0.65、0.42、0.36 分别说明上一分钟、最后五分钟以及最后十五分钟的系统负载均值。那么这又带来了一个问题：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">我们以哪个数字为准？一分钟？五分钟？还是十五分钟？</span><br></pre></td></tr></table></figure>
+<p>一般来说应该着眼于五分钟或者十五分钟的平均数值。坦白讲，如果前一分钟的负载情况是 1.00，那么仍可以认定服务器情况是正常的。 但是如果十五分钟的数值仍然保持在 1.00，那么就值得注意了</p>
+<p>那么如何理解这些数字背后的含义呢？1.0是好还是坏？</p>
+<p>load average代表的其实是cpu的负载率，具体数字的含义<a href="http://os.51cto.com/art/200912/173219.htm" target="_blank" rel="noopener">详解Linux中Load average负载</a>举了个很好的例子来说明。</p>
+<p>行车过桥</p>
+<p>一只单核的处理器可以形象得比喻成一条单车道。设想下，你现在需要收取这条道路的过桥 费 — 忙于处理那些将要过桥的车辆。你首先当然需要了解些信息，例如车辆的载重、以及还有多少车辆正在等待过桥。如果前面没有车辆在等待，那么你可以告诉后面的司机通过。 如果车辆众多，那么需要告知他们可能需要稍等一会。</p>
+<p>因此，需要些特定的代号表示目前的车流情况，例如：</p>
+<p>0.00 表示目前桥面上没有任何的车流。 实际上这种情况与 0.00 和 1.00 之间是相同的，总而言之很通畅，过往的车辆可以丝毫不用等待的通过。</p>
+<p>1.00 表示刚好是在这座桥的承受范围内。 这种情况不算糟糕，只是车流会有些堵，不过这种情况可能会造成交通越来越慢。</p>
+<p>超过 1.00，那么说明这座桥已经超出负荷，交通严重的拥堵。 那么情况有多糟糕？ 例如 2.00 的情况说明车流已经超出了桥所能承受的一倍，那么将有多余过桥一倍的车辆正在焦急的等待。3.00 的话情况就更不妙了，说明这座桥基本上已经快承受不了，还有超出桥负载两倍多的车辆正在等待。</p>
+<p>上面的情况和处理器的负载情况非常相似。一辆汽车的过桥时间就好比是处理器处理某线程 的实际时间。Unix 系统定义的进程运行时长为所有处理器内核的处理时间加上线程 在队列中等待的时间。</p>
+<p>和收过桥费的管理员一样，你当然希望你的汽车（操作）不会被焦急的等待。所以，理想状态下，都希望负载平均值小于 1.00 。当然不排除部分峰值会超过 1.00，但长此以往保持这 个状态，就说明会有问题，这时候你应该会很焦急。</p>
+<p>“所以你说的理想负荷为 1.00 ？”</p>
+<p>嗯，这种情况其实并不完全正确。负荷 1.00 说明系统已经没有剩余的资源了。在实际情况中 ，有经验的系统管理员都会将这条线划在 0.70：</p>
+<p>“需要进行调查法则”： 如果长期你的系统负载在 0.70 上下，那么你需要在事情变得更糟糕之前，花些时间了解其原因。</p>
+<p>“现在就要修复法则”：1.00 。 如果你的服务器系统负载长期徘徊于 1.00，那么就应该马上解决这个问题。否则，你将半夜接到你上司的电话，这可不是件令人愉快的事情。</p>
+<p>“凌晨三点半锻炼身体法则”：5.00。 如果你的服务器负载超过了 5.00 这个数字，那么你将失去你的睡眠，还得在会议中说明这情况发生的原因，总之千万不要让它发生。</p>
+<p>那么多个处理器呢？我的均值是 3.00，但是系统运行正常！</p>
+<p>哇喔，你有四个处理器的主机？那么它的负载均值在 3.00 是很正常的。</p>
+<p>在多处理器系统中，负载均值是基于内核的数量决定的。以 100% 负载计算，1.00 表示单个处理器，而 2.00 则说明有两个双处理器，那么 4.00 就说明主机具有四个处理器。</p>
+<p>回到我们上面有关车辆过桥的比喻。1.00 我说过是“一条单车道的道路”。那么在单车道 1.00 情况中，说明这桥梁已经被车塞满了。而在双处理器系统中，这意味着多出了一倍的 负载，也就是说还有 50% 的剩余系统资源 — 因为还有另外条车道可以通行。</p>
+<p>那么我如何得知我的系统装备了多少核心的处理器？</p>
+<p>在 Linux 下，可以使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /proc/cpuinfo</span><br></pre></td></tr></table></figure>
+<p>t<br>获取你系统上的每个处理器的信息。</p>
+<p><code>grep -c &#39;model name&#39; /proc/cpuinfo</code>命令，直接返回CPU的总核心数。</p>
+<p><strong>参考文献:</strong><br><a href="http://www.ruanyifeng.com/blog/2011/07/linux_load_average_explained.html" target="_blank" rel="noopener">理解Linux系统负荷</a></p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Linux/">Linux</a><a href="/tags/负载测试/">负载测试</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
+    
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/12/04/JVM内存模型详解/" title="JVM内存模型详解" itemprop="url">JVM内存模型详解</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-12-04T10:11:31.000Z" itemprop="datePublished"> Published 2017-12-04</time>
+    
+  </p>
+</header>
+    <div class="article-content">
+        
+        <h3 id="1-基本概念"><a href="#1-基本概念" class="headerlink" title="1.基本概念"></a>1.基本概念</h3><p>JVM实际上是运行在一个具体操作系统上的程序进程，对Java代码而言，JVM就是操作系统的代理。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-8751283d73ba2634.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="JVM内存模型"></p>
+<p>如图所示是JVM的内存模型及数据交互。JVM的内存模型依然是基于操作系统进程空间的，不过是自己设计了一套内存管理体系以支撑上层的Java代码。</p>
+<p>JVM的运行时内存可以简单的分为线程私有和公共内存，线程私有部分包含程序计数器、Java栈、native方法栈。全局公共部分包含方法区、堆空间。</p>
+<h3 id="2-程序计数器"><a href="#2-程序计数器" class="headerlink" title="2.程序计数器"></a>2.程序计数器</h3><p>不止是JVM，操作系统本身就有程序计数器的概念，可以把JVM的程序计数器看做是对操作系统本身程序计数器的一种抽象。</p>
+<p>程序计数器会记录当前线程下一条字节码的位置。当线程被挂起然后被恢复的时候，会根据程序计数器恢复线程的执行逻辑。特别的，如果该线程正在执行一个native方法，那么此时线程寄存器的值为”undefined”。</p>
+<h3 id="3-Java方法栈"><a href="#3-Java方法栈" class="headerlink" title="3.Java方法栈"></a>3.Java方法栈</h3><p>Java栈也是线程私有的。每个方法在执行的时候都会同时生成一个栈帧，用于存储局部变量、操作数栈、动态链接、方法出口等信息。方法执行从开始到结束的过程，对应了栈帧在虚拟机Java栈中从入栈到出栈的过程。</p>
+<p>局部变量表中存储了基本类型及引用类型(即对象的指针)，其中64位长度的long和double类型的数据会占用2个局部变量空间（Slot），其余的数据类型只占用1个。局部变量表所需的内存空间在编译期间完成分配，当进入一个方法时，这个方法需要在帧中分配多大的局部变量空间是完全确定的，在方法运行期间不会改变局部变量表的大小。</p>
+<h3 id="4-native方法栈"><a href="#4-native方法栈" class="headerlink" title="4.native方法栈"></a>4.native方法栈</h3><p>native方法栈与Java方法栈类似，不过native方法栈是为虚拟机使用到的native方法服务的。</p>
+<p>Java虚拟机规范对于这块没有强制规定，因此Sun HotSpot甚至直接就把native方法栈和Java方法栈合二为一。</p>
+<h3 id="5-Java堆"><a href="#5-Java堆" class="headerlink" title="5.Java堆"></a>5.Java堆</h3><p>Java堆(Java Heap）是Java虚拟机所管理的内存中最大的一块。Java堆是被所有线程共享的一块内存区域，在虚拟机启动时创建。此内存区域的唯一目的就是存放对象实例，几乎所有的对象实例都在这里分配内存。这一点在Java虚拟机规范中的描述是：所有的对象实例以及数组都要在堆上分配。</p>
+<p>Java堆是垃圾收集器管理的主要区域，因此很多时候也被称做“GC堆”。关于Java堆的详细结构，也需要和GC机制一起来讲才能比较清楚的理解，此处先跳过。</p>
+<p>通过虚拟机启动参数，我们可以控制Java堆的最大内存占用，如果超过最大内存，会触发OutOfMemory异常，进而导致内存申请失败。如果出现这种异常，就要考虑是参数设置太小还是存在堆内存泄露。</p>
+<h3 id="6-方法区"><a href="#6-方法区" class="headerlink" title="6.方法区"></a>6.方法区</h3><p>方法区（Method Area）与Java堆一样，是各个线程共享的内存区域，它用于存储已被虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。虽然Java虚拟机规范把方法区描述为堆的一个逻辑部分，但是它却有一个别名叫做Non-Heap（非堆），目的应该是与Java堆区分开来。</p>
+<p>对于习惯在HotSpot虚拟机上开发、部署程序的开发者来说，很多人都更愿意把方法区称为“永久代”（Permanent Generation），本质上两者并不等价，仅仅是因为HotSpot虚拟机的设计团队选择把GC分代收集扩展至方法区，或者说使用永久代来实现方法区而已，这样HotSpot的垃圾收集器可以像管理Java堆一样去管理这部分内存。</p>
+<p>但是使用永久代来实现方法区，并不是一个好主意，因为这样更加容易遇到内存溢出问题，永久代的内存分配一般比较小且固定，但是当碰到String.intern这种运行时占用永久代内存空间的方法的时候，很容易导致永久代内存不够用。因此在jdk1.7中，已经把放在永久代中的字符串常量池移入到堆内存当中了。</p>
+<h3 id="7-运行时常量池"><a href="#7-运行时常量池" class="headerlink" title="7.运行时常量池"></a>7.运行时常量池</h3><p>运行时常量池是方法区的一部分，存放了class文件在编译期生成的各种字面量和符号引用。这部分内容在类加载的时候放入运行时常量池中。</p>
+<p>运行时常量池是动态变化的，不止存储了class文件在编译期生成的各种字面量，运行期间也可能放入新的常量，比如String类的intern方法。</p>
+<h3 id="8-直接内存"><a href="#8-直接内存" class="headerlink" title="8.直接内存"></a>8.直接内存</h3><p>直接内存并不是虚拟机运行时区域的一部分，也不是Java虚拟机规范定义的内存区域。JDK 1.4中新加入的NIO类，引入了一种基于通道和缓冲区的I/O方式，它可以使用native函数库直接分配堆外内存，然后通过一个存储在Java堆中的DirectByteBuffer对象作为这块内存的引用进行操作。这样做是为了能在一些场景中显著提高性能，因为避免了Java堆和native堆来回复制数据。</p>
+<p>本机直接内存的分配不受到Java堆的大小限制，但会受到物理内存和操作系统的限制。</p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java/">Java</a><a href="/tags/JVM/">JVM</a><a href="/tags/内存模型/">内存模型</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
+    
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/11/23/Linux中的内存管理/" title="Linux中的内存管理" itemprop="url">Linux中的内存管理</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-11-23T12:17:59.000Z" itemprop="datePublished"> Published 2017-11-23</time>
+    
+  </p>
+</header>
+    <div class="article-content">
+        
+        <p>Linux的内存管理方式经常会在面试时作为操作系统基础被问道。搞清楚这个问题的好处很多，近的话可以应付面试，远的可以提高对于操作系统底层的认识，为程序的性能优化打下基础。</p>
+<p>我们对于计算机内存，最直观和简陋的概念就是机器的物理内存，程序都被放在物理内存上执行。物理内存一般都有限制，比如说4G或者8G。</p>
+<p>但是如果真的这样直接的使用物理内存会发生什么状况？</p>
+<h1 id="1、进程地址空间不能隔离"><a href="#1、进程地址空间不能隔离" class="headerlink" title="1、进程地址空间不能隔离"></a>1、进程地址空间不能隔离</h1><p>由于程序直接访问的是物理内存，这个时候程序所使用的内存空间不是隔离的。恶意程序或者是木马程序可以轻而易举的破快其他的程序，系统的安全性也就得不到保障了，这对用户来说也是不能容忍的。</p>
+<h1 id="2、内存使用的效率低"><a href="#2、内存使用的效率低" class="headerlink" title="2、内存使用的效率低"></a>2、内存使用的效率低</h1><p>由于物理内存一般都有限制，当物理内存不够用时，需要把暂时不需要运行的程序放到磁盘上，试想将整个程序放入磁盘，我们知道IO操作比较耗时，所以这个过程效率将会十分低下。</p>
+<h1 id="3、程序运行的地址不能确定"><a href="#3、程序运行的地址不能确定" class="headerlink" title="3、程序运行的地址不能确定"></a>3、程序运行的地址不能确定</h1><p>程序每次需要运行时，都需要在内存中非配一块足够大的空闲区域，而问题是这个空闲的位置是不能确定的，这会带来一些重定位的问题，重定位的问题确定就是程序中引用的变量和函数的地址。</p>
+<p>可以通过引入一个中间层来解决上面的问题。</p>
+<p>现在的内存管理方法就是在程序和物理内存之间引入了虚拟内存这个概念。虚拟内存位于程序和物理内存之间，程序只能看见虚拟内存，再也不能直接访问物理内存。每个程序都有自己独立的进程地址空间，这样就做到了进程隔离。这里的进程地址空间是指虚拟地址。顾名思义既然是虚拟地址，也就是虚的，不是现实存在的地址空间。</p>
+<p>既然我们在程序和物理地址空间之间增加了虚拟地址，那么就要解决怎么从虚拟地址映射到物理地址，因为程序最终肯定是运行在物理内存中的，主要有分段和分页两种技术。</p>
+<p>分段(Segmentation)：这种方法是人们最开始使用的一种方法，基本思路是将程序所需要的内存地址空间大小的虚拟空间映射到某个物理地址空间。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-68047d4ea890298b.jpg" alt="段映射机制"></p>
+<p>每个程序都有自己的独立虚拟的进程地址空间。进程的只能看到自己的虚拟地址空间，这就使得进程和实际的物理地址解除耦合。两块大小相同的虚拟地址空间和实际物理地址空间一一映射，即虚拟地址空间中的每个字节对应于实际地址空间中的每个字节，这个映射过程由软件来设置映射的机制，实际的转换由硬件来完成。</p>
+<p>这种分段的机制解决了文章一开始提到的3个问题中的进程地址空间隔离（1）和程序地址重定位（3）的问题。（PS：既然隔离了，那么缓冲区溢出为啥还能那么牛掰？答案最后讲。）</p>
+<p>程序A和程序B有自己独立的虚拟地址空间，而且该虚拟地址空间被映射到了互相不重叠的物理地址空间，如果程序A访问虚拟地址空间的地址不在0x00000000-0x00A00000这个范围内，那么内核就会拒绝这个请求，所以它解决了隔离地址空间的问题。我们应用程序A只需要关心其虚拟地址空间0x00000000-0x00A00000，而其被映射到哪个物理地址我们无需关心，所以程序永远按照这个虚拟地址空间来放置变量、代码，不需要重新定位。</p>
+<p>分段机制解决了上面两个问题，是一个很大的进步，但是对于内存效率问题仍然无能为力。因为这种内存映射机制仍然是以程序为单位，当内存不足时仍然需要将整个程序交换到磁盘，这样内存使用的效率仍然很低。事实上，根据程序的局部性运行原理，一个程序在运行的过程当中，在某个时间段内，只有一小部分数据会被经常用到。所以我们需要更加小粒度的内存分割和映射方法，此时是否会想到Linux中的Buddy算法和slab内存分配机制呢，哈哈。另一种将虚拟地址转换为物理地址的方法分页机制应运而生了。</p>
+<p>分页机制就是把内存地址空间分为若干个很小的固定大小的页，每一页的大小由内存决定，就像Linux中ext文件系统将磁盘分成若干个Block一样，这样做是分别是为了提高内存和磁盘的利用率。</p>
+<p>Linux中一般页的大小是4KB，我们把进程的地址空间按页分割，把常用的数据和代码页装载到内存中，不常用的代码和数据保存在磁盘中，我们还是以一个例子来说明,如下图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-fc482b0ab34562fc.jpg" alt="分页机制"></p>
+<p>我们可以看到进程1和进程2的虚拟地址空间都被映射到了不连续的物理地址空间内。</p>
+<p>有一天我们的连续物理地址空间不够，但是不连续的地址空间很多，如果没有这种技术，我们的程序就没有办法运行,甚至他们共用了一部分物理地址空间，这就是共享内存。</p>
+<p>进程1的虚拟页VP2和VP3被交换到了磁盘中，在程序需要这两页的时候，Linux内核会产生一个缺页异常，然后异常管理程序会将其读到内存中。</p>
+<p>分页机制的实现需要硬件的实现，这个硬件名字叫做MMU(Memory Management Unit)，他就是专门负责从虚拟地址到物理地址转换的，也就是从虚拟页找到物理页。</p>
+<p>有的时候，单个页表无法表示所有内存页信息，我们还需要多级页表的帮助才行。（后面再讲。）</p>
+<p>下面继续聊聊进程地址的概念，当然都是基于Linux操作系统。</p>
+<p>进程内部通过分段的方式划分了：数据段、代码段。数据段又可以分为：静态数据段、栈、堆。</p>
+<p>由此有几个地址需要讲一下：</p>
+<ul>
+<li><p>逻辑地址：段基值确定它所在的段居于整个存储空间的位置,偏移量确定它在段内的位置,这种地址表示方式称为逻辑地址。机器语言指令中出现的内存地址（&amp;操作符），都是逻辑地址。</p>
+</li>
+<li><p>线性地址：又叫虚拟地址，是一个32位无符号整数，可以用来表示高达4GB的地址，跟逻辑地址类似，它也是一个不真实的地址，如果逻辑地址是对应的硬件平台段式管理转换前地址的话，那么线性地址则对应了硬件页式内存的转换前地址。</p>
+</li>
+<li><p>物理地址：用于内存芯片级的单元寻址，与处理器和CPU连接的地址总线相对应。</p>
+</li>
+</ul>
+<p>CPU将一个虚拟内存空间中的地址转换为物理地址，需要进行两步：首先将给定一个逻辑地址，CPU要利用其段式内存管理单元，先将为个逻辑地址转换成一个线性地址，再利用其页式内存管理单元，转换为最终物理地址。</p>
+<p>逻辑地址—-<strong>段式内存管理单元</strong>—-线性地址—-<strong>页式内存管理单元</strong>—-物理地址</p>
+<p><strong>Linux中逻辑地址等于线性地址</strong>。为什么这么说呢？因为Linux所有的段（用户代码段、用户数据段、内核代码段、内核数据段）的线性地址都是从 0x00000000 开始，长度4G，这样<strong>线性地址=逻辑地址+ 0x00000000</strong>，也就是说逻辑地址等于线性地址了。</p>
+<p>Linux主要以分页的方式实现内存管理。</p>
+<p>前面说了Linux中逻辑地址等于线性地址，那么线性地址怎么对应到物理地址呢？这个大家都知道，那就是通过分页机制，具体的说，就是通过页表查找来对应物理地址。</p>
+<p>准确的说分页是CPU提供的一种机制，Linux只是根据这种机制的规则，利用它实现了内存管理。</p>
+<p>分页的基本原理是把内存划分成大小固定的若干单元，每个单元称为一页（page），每页包含4k字节的地址空间（为简化分析，我们不考虑扩展分页的情况）。这样每一页的起始地址都是4k字节对齐的。为了能转换成物理地址，我们需要给CPU提供当前任务的线性地址转物理地址的查找表，即页表(page table)。注意，<strong>为了实现每个任务的平坦的虚拟内存，每个任务都有自己的页目录表和页表</strong>。</p>
+<p>32位的线性地址被分成3个部分：最高10位 Directory 页目录表偏移量，中间10位 Table是页表偏移量，最低12位Offset是物理页内的字节偏移量。</p>
+<p>页目录表的大小为4k（刚好是一个页的大小），包含1024项，每个项4字节（32位），项目里存储的内容就是<strong>页表的物理地址</strong>。如果页目录表中的页表尚未分配，则物理地址填0。</p>
+<p>页表的大小也是4k，同样包含1024项，每个项4字节，内容为最终物理页的物理内存起始地址。</p>
+<p><strong>每个活动的任务，必须要先分配给它一个页目录表，并把页目录表的物理地址存入cr3寄存器。页表可以提前分配好，也可以在用到的时候再分配</strong>。</p>
+<p>以 mov    0x80495b0, %eax 中的地址为例分析一下线性地址转物理地址的过程。</p>
+<p>前面说到Linux中逻辑地址等于线性地址，那么我们要转换的线性地址就是0x80495b0。转换的过程是由CPU自动完成的，Linux所要做的就是准备好转换所需的页目录表和页表（假设已经准备好，给页目录表和页表分配物理内存的过程很复杂，后面再分析）。</p>
+<p>内核先将当前任务的页目录表的物理地址填入cr3寄存器。</p>
+<p>线性地址 0x80495b0 转换成二进制后是 0000 1000 0000 0100 1001 0101 1011 0000，最高10位0000 1000 00的十进制是32，CPU查看页目录表第32项，里面存放的是页表的物理地址。线性地址中间10位00 0100 1001 的十进制是73，页表的第73项存储的是最终物理页的物理起始地址。物理页基地址加上线性地址中最低12位的偏移量，CPU就找到了线性地址最终对应的物理内存单元。</p>
+<p>我们知道Linux中用户进程线性地址能寻址的范围是0 － 3G，那么是不是需要提前先把这3G虚拟内存的页表都建立好呢？一般情况下，物理内存是远远小于3G的，加上同时有很多进程都在运行，根本无法给每个进程提前建立3G的线性地址页表。Linux利用CPU的一个机制解决了这个问题。进程创建后我们可以给页目录表的表项值都填0，CPU在查找页表时，如果表项的内容为0,则会引发一个缺页异常，进程暂停执行，Linux内核这时候可以通过一系列复杂的算法给分配一个物理页，并把物理页的地址填入表项中，进程再恢复执行。当然进程在这个过程中是被蒙蔽的，它自己的感觉还是正常访问到了物理内存。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-f9497bf469968de5.jpg" alt="线性地址转物理地址"></p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/内存管理/">内存管理</a><a href="/tags/Linux/">Linux</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
+    
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/11/22/Java代理模式及使用/" title="Java代理模式及使用" itemprop="url">Java代理模式及使用</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-11-21T19:10:56.000Z" itemprop="datePublished"> Published 2017-11-22</time>
+    
+  </p>
+</header>
+    <div class="article-content">
+        
+        <h3 id="一、简单代理模式"><a href="#一、简单代理模式" class="headerlink" title="一、简单代理模式"></a>一、简单代理模式</h3><p>简单代理模式就是为一个实现类找一个代理人类，由这个代理人持有这个实现类并对外提供服务。</p>
+<p>假设我有一个RealSubject类，实现了Subject接口：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public class RealSubject implements Subject&#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void request() &#123;</span><br><span class="line">        System.out.println(&quot;Real subject.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>Subject接口很简单，就定义了request方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">request</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>那么写一个代理人类来代理RealSubject：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SubjectProxy</span> <span class="keyword">implements</span> <span class="title">Subject</span></span>&#123;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">private</span> Subject subject;</span><br><span class="line">       </span><br><span class="line">       <span class="function"><span class="keyword">public</span> <span class="title">SubjectProxy</span><span class="params">(Subject subject)</span></span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.subject = subject;</span><br><span class="line">       &#125;</span><br><span class="line">       </span><br><span class="line">       <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">request</span><span class="params">()</span></span>&#123;</span><br><span class="line">             ...</span><br><span class="line">             subject.request();</span><br><span class="line">             ...</span><br><span class="line">       &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>使用的时候，只需要将RealSubject的实例对象交给代理类，再由代理类来对外提供服务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    Subject subject = new SubjectProxy(new RealSubject());</span><br><span class="line">    subject.request();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="二、动态代理模式"><a href="#二、动态代理模式" class="headerlink" title="二、动态代理模式"></a>二、动态代理模式</h3><p>代理模式的本质，就是在实际调用代码前后，先做一些处理。但是为了实现这个功能，简单代理模式(或者说静态代理模式)，需要为不同接口实现不同的代理类。比如说上文的Subject接口，实现代理模式需要一个SubjectProxy来实现这个接口。</p>
+<p>假设我们需要代理很多接口，这些接口的代理者行为相近(比如房产中介都是代理雇主卖房子)，那么我却需要为每一个接口实现一个代理类。</p>
+<p>其实不需要这样。使用动态代理可以解决这个问题。</p>
+<p>Java中可以通过实现InvocationHandler接口来创建一个代处理类(有点拗口)。好比说刚刚的例子，可以把SubjectProxy改写为:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public class MyInvocation implements InvocationHandler &#123;</span><br><span class="line"></span><br><span class="line">    private Object obj;</span><br><span class="line"></span><br><span class="line">    public MyInvocation(Object o)&#123;</span><br><span class="line">        this.obj = o;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">        System.out.println(&quot;before calling &quot; + method);</span><br><span class="line">        method.invoke(obj, args);</span><br><span class="line">        System.out.println(&quot;after calling &quot; + method);</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>好了，我们有了一个代处理类MyInvocation，如何用它来代理我们的RealSubject？答案在下面:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args) throws Throwable &#123;</span><br><span class="line">    Subject rs = new RealSubject();</span><br><span class="line">    InvocationHandler ds = new MyInvocation(rs);</span><br><span class="line">    Class&lt;?&gt; cls = rs.getClass();</span><br><span class="line">    Subject subject=(Subject) Proxy.newProxyInstance(cls.getClassLoader(), cls.getInterfaces(), ds);</span><br><span class="line">    </span><br><span class="line">    subject.request();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码中，我们首先实例化了一个需要被代理的类RealSubject，然后将其交给我们的MyInvocation持有。（简单代理模式到这一步就完成了代理，但是也因此使得代理类和具体接口绑定在一起）接下来，我们把MyInvocation、被代理类的一些信息传给Proxy类，由Proxy生成一个Subject对象。</p>
+<p>此时调用新生成对象的方法，会发现已经完成了对RealSubject的代理。</p>
+<h3 id="三、动态代理的原理"><a href="#三、动态代理的原理" class="headerlink" title="三、动态代理的原理"></a>三、动态代理的原理</h3><p>通过debug上文的代码可以看到动态代理是如何实现的。</p>
+<p>生成的代理对象实际类型是<code>$Proxy0</code>。<code>$Proxy0</code>继承自Proxy类，但并不是一个真实存在的类。而是在运行时动态生成的一个对象。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/648342-45ef2987e16858da.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="subject对象实际的类型"></p>
+<p>关于Java如何动态生成字节码可以参考这篇文章:<a href="http://blog.csdn.net/luanlouis/article/details/24589193" target="_blank" rel="noopener">Java动态代理机制详解</a>。</p>
+<p>通过下面的代码将$Proxy0对象导出为class文件:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">String path = &quot;/$Proxy0.class&quot;;</span><br><span class="line">byte[] classFile = ProxyGenerator.generateProxyClass(&quot;$Proxy0&quot;, RealSubject.class.getInterfaces());</span><br><span class="line">FileOutputStream out = null;</span><br><span class="line"></span><br><span class="line">try &#123;</span><br><span class="line">    out = new FileOutputStream(path);</span><br><span class="line">    out.write(classFile);</span><br><span class="line">    out.flush();</span><br><span class="line">&#125; catch (Exception e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125; finally &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        out.close();</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>导出的$Proxy0.class如下所示：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> $<span class="title">Proxy0</span> <span class="keyword">extends</span> <span class="title">Proxy</span> <span class="keyword">implements</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m1;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m3;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m0;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Method m2;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> $Proxy0(InvocationHandler var1) <span class="keyword">throws</span>  &#123;</span><br><span class="line">        <span class="keyword">super</span>(var1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object var1)</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> ((Boolean)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m1, <span class="keyword">new</span> Object[]&#123;var1&#125;)).booleanValue();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var3;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var4) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var4);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">request</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m3, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hashCode</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> ((Integer)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m0, (Object[])<span class="keyword">null</span>)).intValue();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> String <span class="title">toString</span><span class="params">()</span> <span class="keyword">throws</span>  </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> (String)<span class="keyword">super</span>.h.invoke(<span class="keyword">this</span>, m2, (Object[])<span class="keyword">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RuntimeException | Error var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> var2;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UndeclaredThrowableException(var3);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            m1 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"equals"</span>, <span class="keyword">new</span> Class[]&#123;Class.forName(<span class="string">"java.lang.Object"</span>)&#125;);</span><br><span class="line">            m3 = Class.forName(<span class="string">"com.mogujie.qiankun.proxy.Subject"</span>).getMethod(<span class="string">"request"</span>, <span class="keyword">new</span> Class[<span class="number">0</span>]);</span><br><span class="line">            m0 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"hashCode"</span>, <span class="keyword">new</span> Class[<span class="number">0</span>]);</span><br><span class="line">            m2 = Class.forName(<span class="string">"java.lang.Object"</span>).getMethod(<span class="string">"toString"</span>, <span class="keyword">new</span> Class[<span class="number">0</span>]);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchMethodException var2) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchMethodError(var2.getMessage());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException var3) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> NoClassDefFoundError(var3.getMessage());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过上面的代码可以知道，我们调用代理类的request方法时，实际执行的是：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public final void request() throws  &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        super.h.invoke(this, m3, (Object[])null);</span><br><span class="line">    &#125; catch (RuntimeException | Error var2) &#123;</span><br><span class="line">        throw var2;</span><br><span class="line">    &#125; catch (Throwable var3) &#123;</span><br><span class="line">        throw new UndeclaredThrowableException(var3);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java/">Java</a><a href="/tags/代理模式/">代理模式</a>
+  </div>
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
+    
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/11/20/hello-world/" title="Hello World" itemprop="url">Hello World</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
+		
+  <p class="article-time">
+    <time datetime="2017-11-20T10:54:31.000Z" itemprop="datePublished"> Published 2017-11-20</time>
+    
+  </p>
+</header>
+    <div class="article-content">
+        
+        <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
 
 
 
@@ -404,7 +1079,7 @@ JVM的运行时内存可以简</p>
 	
 	<section class="info">
 		<p> Hello ,I&#39;m qiankun in MOGUJIE. <br/>
-			This is my blog,believe it or not.</p>
+			This is my blog,I will continue to write this blog</p>
 	</section>
 	 
 	<div class="social-font" class="clearfix">
