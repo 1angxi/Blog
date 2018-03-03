@@ -46,7 +46,7 @@
 				<h1 class="site-name"><a href="/" title="roadunderfoot">roadunderfoot</a></h1>
 				<h2 class="blog-motto">搬砖程序员</h2>
 			</div>
-			<div class="navbar"><a class="navbutton navmobile" href="#" title="Menu">
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
 			</a></div>
 			<nav class="animated">
 				<ul>
@@ -56,7 +56,7 @@
  					
 					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
 						<label>Search</label>
-						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="Search" />
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
 						<input type="hidden" name="q" value="site:roadunderfoot.com">
 					</form>
 					
@@ -81,7 +81,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2018-03-03T13:44:04.000Z" itemprop="datePublished"> Published 2018-03-03</time>
+    <time datetime="2018-03-03T13:44:04.000Z" itemprop="datePublished"> 发表于 2018-03-03</time>
     
   </p>
 </header>
@@ -101,7 +101,7 @@
 <p>消息队列可能存在各种异常情况(消息丢失、处理失败)，需要定时对账保证订单和用户数据的最终一致性。</p>
 <h3 id="南北流量灵活调控"><a href="#南北流量灵活调控" class="headerlink" title="南北流量灵活调控"></a>南北流量灵活调控</h3><p>红包系统南北分布后，订单落地到深圳还是上海，是可以灵活分配的，只需要在接入层上做逻辑。</p>
 <p>可以在接入层中，实现让所有红包请求，都落地到深圳（无论用户从上海接入，还是深圳接入），这样上海的红包业务系统将不会有请求量。提升了红包系统的容灾能力。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ps:这个地方有个问题，拆红包的时候，接入请求的服务端怎么知道这个红包是属于深圳还是上海。最简单的方式是查一下本地数据库有无这个红包，没有就把请求调用到另外一个城市。这种方式其实不太好，会调用两次查询，而且第一次查询请求可能会穿透到DB。</span><br></pre></td></tr></table></figure>
+<p>ps:这个地方有个问题，拆红包的时候，接入请求的服务端怎么知道这个红包是属于深圳还是上海。最简单的方式是查一下本地数据库有无这个红包，没有就把请求调用到另外一个城市。这种方式其实不太好，会调用两次查询，而且第一次查询请求可能会穿透到DB。</p>
 <h3 id="预订单"><a href="#预订单" class="headerlink" title="预订单"></a>预订单</h3><p>支付前订单落cache，同时利用cache的原子incr操作顺序生成红包订单号。部分用户请求发红包后，并不会真正去付款，减少DB中的废单记录。</p>
 <p><code>这个地方强依赖了cache，cache如果请求失败、甚至挂了怎么办？</code></p>
 <h3 id="拆红包入账异步化"><a href="#拆红包入账异步化" class="headerlink" title="拆红包入账异步化"></a>拆红包入账异步化</h3><p>信息流与资金流分离。拆红包时，DB中记下拆红包凭证，然后异步队列请求入账。入账失败通过补偿队列补偿，最终通过红包凭证与用户账户入账流水对账，保证最终一致性。</p>
@@ -214,7 +214,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2018-02-08T09:19:00.000Z" itemprop="datePublished"> Published 2018-02-08</time>
+    <time datetime="2018-02-08T09:19:00.000Z" itemprop="datePublished"> 发表于 2018-02-08</time>
     
   </p>
 </header>
@@ -351,7 +351,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-12-24T16:46:37.000Z" itemprop="datePublished"> Published 2017-12-25</time>
+    <time datetime="2017-12-24T16:46:37.000Z" itemprop="datePublished"> 发表于 2017-12-25</time>
     
   </p>
 </header>
@@ -442,7 +442,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-12-23T21:35:40.000Z" itemprop="datePublished"> Published 2017-12-24</time>
+    <time datetime="2017-12-23T21:35:40.000Z" itemprop="datePublished"> 发表于 2017-12-24</time>
     
   </p>
 </header>
@@ -512,7 +512,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-12-08T00:41:38.000Z" itemprop="datePublished"> Published 2017-12-08</time>
+    <time datetime="2017-12-08T00:41:38.000Z" itemprop="datePublished"> 发表于 2017-12-08</time>
     
   </p>
 </header>
@@ -584,7 +584,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-12-04T15:24:14.000Z" itemprop="datePublished"> Published 2017-12-04</time>
+    <time datetime="2017-12-04T15:24:14.000Z" itemprop="datePublished"> 发表于 2017-12-04</time>
     
   </p>
 </header>
@@ -669,7 +669,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-12-04T10:11:31.000Z" itemprop="datePublished"> Published 2017-12-04</time>
+    <time datetime="2017-12-04T10:11:31.000Z" itemprop="datePublished"> 发表于 2017-12-04</time>
     
   </p>
 </header>
@@ -743,7 +743,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-11-23T12:17:59.000Z" itemprop="datePublished"> Published 2017-11-23</time>
+    <time datetime="2017-11-23T12:17:59.000Z" itemprop="datePublished"> 发表于 2017-11-23</time>
     
   </p>
 </header>
@@ -848,7 +848,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-11-21T19:10:56.000Z" itemprop="datePublished"> Published 2017-11-22</time>
+    <time datetime="2017-11-21T19:10:56.000Z" itemprop="datePublished"> 发表于 2017-11-22</time>
     
   </p>
 </header>
@@ -923,7 +923,7 @@
 		<a href="/about" title="乾坤" target="_blank" itemprop="author">乾坤</a>
 		
   <p class="article-time">
-    <time datetime="2017-11-20T10:54:31.000Z" itemprop="datePublished"> Published 2017-11-20</time>
+    <time datetime="2017-11-20T10:54:31.000Z" itemprop="datePublished"> 发表于 2017-11-20</time>
     
   </p>
 </header>
@@ -970,17 +970,17 @@
 
 
 </div>
-      <div class="openaside"><a class="navbutton" href="#" title="Show Sidebar"></a></div>
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
 
 <div id="asidepart">
-<div class="closeaside"><a class="closebutton" href="#" title="Hide Sidebar"></a></div>
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
 <aside class="clearfix">
 
   
 
   
 <div class="tagslist">
-	<p class="asidetitle">Tags</p>
+	<p class="asidetitle">标签</p>
 		<ul class="clearfix">
 		
 			
@@ -992,11 +992,11 @@
 			
 		
 			
-				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
+				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
 			
 		
 			
-				<li><a href="/tags/熔断/" title="熔断">熔断<sup>1</sup></a></li>
+				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
 			
 		
 			
@@ -1032,7 +1032,7 @@
 			
 		
 			
-				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+				<li><a href="/tags/MySQL/" title="MySQL">MySQL<sup>1</sup></a></li>
 			
 		
 			
@@ -1040,15 +1040,15 @@
 			
 		
 			
-				<li><a href="/tags/请求超时/" title="请求超时">请求超时<sup>1</sup></a></li>
-			
-		
-			
-				<li><a href="/tags/数据迁移/" title="数据迁移">数据迁移<sup>1</sup></a></li>
-			
-		
-			
 				<li><a href="/tags/数据库中间件/" title="数据库中间件">数据库中间件<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/内存管理/" title="内存管理">内存管理<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/稳定性/" title="稳定性">稳定性<sup>1</sup></a></li>
 			
 		
 			
@@ -1069,7 +1069,7 @@
 
   
   <div class="archiveslist">
-    <p class="asidetitle"><a href="/archives">Archives</a></p>
+    <p class="asidetitle"><a href="/archives">归档</a></p>
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/03/">March 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">5</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/11/">November 2017</a><span class="archive-list-count">3</span></li></ul>
   </div>
 
@@ -1215,7 +1215,7 @@ $(document).ready(function(){
 <!-- Totop Begin -->
 
 	<div id="totop">
-	<a title="Back to Top"><img src="/img/scrollup.png"/></a>
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
 	</div>
 	<script src="/js/totop.js"></script>
 
