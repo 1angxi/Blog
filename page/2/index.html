@@ -14,7 +14,7 @@
     <meta name="description" content="roadunderfoot">
 <meta property="og:type" content="website">
 <meta property="og:title" content="roadunderfoot">
-<meta property="og:url" content="http://roadunderfoot.com/index.html">
+<meta property="og:url" content="http://roadunderfoot.com/page/2/index.html">
 <meta property="og:site_name" content="roadunderfoot">
 <meta property="og:description" content="roadunderfoot">
 <meta property="og:locale" content="Java Python Linux">
@@ -71,19 +71,17 @@
   
 <section class="post" itemscope itemprop="blogitem">
   
-    <a href="/2018/03/03/微信红包系统实现/" title="微信红包系统实现" itemprop="url">
+    <a href="/2017/12/04/负载测试学习笔记/" title="负载测试学习笔记" itemprop="url">
   
-    <h1 itemprop="name">微信红包系统实现</h1>
+    <h1 itemprop="name">负载测试学习笔记</h1>
     
      
-           <p itemprop="description" >主要内容转自:http://cxy.liuzhihengseo.com/522.html
-增加了一些自己的理解。
-为啥infoq上的原文已经搜不到了- -
-主要技术点包括：异地架构、cache系统优化、拆红包并发策略优化、存储优化。下文是对这些技术点的总结。
-异地架构用户分南北，</p>
+           <p itemprop="description" >当使用Linux系统做压力测试的时候，会看到top或uptime命令有一个load average条目，也就是负载均值的意思。一般是这样的格式：
+load average: 0.09, 0.05, 0.01
+三个数分别代表不同时间段的系统平均负载（一分钟、五分钟、以及十五分钟），</p>
         
     
-    <time datetime="2018-03-03T13:44:04.000Z" itemprop="datePublished">2018-03-03</time>
+    <time datetime="2017-12-04T15:24:14.000Z" itemprop="datePublished">2017-12-04</time>
   </a>
 </section>
 
@@ -95,16 +93,18 @@
   
 <section class="post" itemscope itemprop="blogitem">
   
-    <a href="/2018/02/08/Hystrix入门/" title="Hystrix入门" itemprop="url">
+    <a href="/2017/12/04/JVM内存模型详解/" title="JVM内存模型详解" itemprop="url">
   
-    <h1 itemprop="name">Hystrix入门</h1>
+    <h1 itemprop="name">JVM内存模型详解</h1>
     
      
-           <p itemprop="description" >Hystrix是什么?hystrix对应的中文名字是“豪猪”，豪猪周身长满了刺，能保护自己不受天敌的伤害，代表了一种防御机制，这与hystrix本身的功能不谋而合，因此Netflix团队将该框架命名为Hystrix，并使用了对应的卡通形象做作为logo。
-在一个分布式系统里，许多</p>
+           <p itemprop="description" >1.基本概念JVM实际上是运行在一个具体操作系统上的程序进程，对Java代码而言，JVM就是操作系统的代理。
+
+如图所示是JVM的内存模型及数据交互。JVM的内存模型依然是基于操作系统进程空间的，不过是自己设计了一套内存管理体系以支撑上层的Java代码。
+JVM的运行时内存可以简</p>
         
     
-    <time datetime="2018-02-08T09:19:00.000Z" itemprop="datePublished">2018-02-08</time>
+    <time datetime="2017-12-04T10:11:31.000Z" itemprop="datePublished">2017-12-04</time>
   </a>
 </section>
 
@@ -116,18 +116,16 @@
   
 <section class="post" itemscope itemprop="blogitem">
   
-    <a href="/2017/12/25/分布式事务/" title="分布式事务" itemprop="url">
+    <a href="/2017/11/23/Linux中的内存管理/" title="Linux中的内存管理" itemprop="url">
   
-    <h1 itemprop="name">分布式事务</h1>
+    <h1 itemprop="name">Linux中的内存管理</h1>
     
      
-           <p itemprop="description" >分布式事务是什么？分布式事务是指事务的参与者、支持事务的服务器、资源服务器及事务的管理器分别位于分布式系统的不同节点上。对于传统的单机上的事务，所有的事情都在这一台机器上完成，而在分布式事务中，会有多个节点参与。
-来看一个分布式事务的规范-XA，XA定义的三个组件：
-
-应用程序(</p>
+           <p itemprop="description" >Linux的内存管理方式经常会在面试时作为操作系统基础被问道。搞清楚这个问题的好处很多，近的话可以应付面试，远的可以提高对于操作系统底层的认识，为程序的性能优化打下基础。
+我们对于计算机内存，最直观和简陋的概念就是机器的物理内存，程序都被放在物理内存上执行。物理内存一般都有限制，</p>
         
     
-    <time datetime="2017-12-24T16:46:37.000Z" itemprop="datePublished">2017-12-25</time>
+    <time datetime="2017-11-23T12:17:59.000Z" itemprop="datePublished">2017-11-23</time>
   </a>
 </section>
 
@@ -139,16 +137,16 @@
   
 <section class="post" itemscope itemprop="blogitem">
   
-    <a href="/2017/12/24/MySQL为例如何实现数据迁移/" title="MySQL为例如何实现数据迁移" itemprop="url">
+    <a href="/2017/11/22/Java代理模式及使用/" title="Java代理模式及使用" itemprop="url">
   
-    <h1 itemprop="name">MySQL为例如何实现数据迁移</h1>
+    <h1 itemprop="name">Java代理模式及使用</h1>
     
      
-           <p itemprop="description" >为什么要做数据迁移？很多场景会导致我们需要修改表结构，当alter不支持修改或者说alter导致的锁表代价太大的时候，我们就需要做数据迁移来解决。
-典型的需要做数据迁移的例子，就是当业务快速发展，单表无法支撑业务数据，需要对单表做拆分，做分库分表时，我们需要把单表的数据全部迁移到</p>
+           <p itemprop="description" >一、简单代理模式简单代理模式就是为一个实现类找一个代理人类，由这个代理人持有这个实现类并对外提供服务。
+假设我有一个RealSubject类，实现了Subject接口：public class RealSubject implements Subject&amp;#123;    @Ov</p>
         
     
-    <time datetime="2017-12-23T21:35:40.000Z" itemprop="datePublished">2017-12-24</time>
+    <time datetime="2017-11-21T19:10:56.000Z" itemprop="datePublished">2017-11-22</time>
   </a>
 </section>
 
@@ -160,16 +158,15 @@
   
 <section class="post" itemscope itemprop="blogitem">
   
-    <a href="/2017/12/08/Spring中使用Quartz来做单机任务调度/" title="Spring中使用Quartz来做单机任务调度" itemprop="url">
+    <a href="/2017/11/20/hello-world/" title="Hello World" itemprop="url">
   
-    <h1 itemprop="name">Spring中使用Quartz来做单机任务调度</h1>
+    <h1 itemprop="name">Hello World</h1>
     
      
-           <p itemprop="description" >背景开发Java应用经常会需要用到单机定时任务，这个时候一般我们会采用分布式任务调度中间件来解决问题。典型的分布式任务调度中间件，比如淘宝的tbschedule，当当的elastic-job，唯品会的saturn。京东没做开源，大概率是用了tbschedule。
-但是，分布式任务</p>
+           <p itemprop="description" >Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the </p>
         
     
-    <time datetime="2017-12-08T00:41:38.000Z" itemprop="datePublished">2017-12-08</time>
+    <time datetime="2017-11-20T10:54:31.000Z" itemprop="datePublished">2017-11-20</time>
   </a>
 </section>
 
@@ -180,7 +177,7 @@
 
 
   <nav id="page-nav" class="clearfix unexpand">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next<span></span></a>
+    <a class="extend prev" rel="prev" href="/"><span></span>Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
   </nav>
 
 </div>
